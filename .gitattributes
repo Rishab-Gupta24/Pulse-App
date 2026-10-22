@@ -1,0 +1,2 @@
+# Git hooks run under sh and break with Windows line endings.
+.githooks/* text eol=lf

@@ -70,6 +70,11 @@
 - **Context:** Phase 7 install polish and the `.design-rules` audit (`accessibility.md` contrast table, `liquid-glass.md` › Review checklist).
 - **Decision:** `app/manifest.ts` (standalone, `start_url` `/`), code-generated flat icons (`app/icon.tsx` → `/icon/32|192|512`, `app/apple-icon.tsx` 180px, shared `AppIconMark`), and the default Next favicon removed. The root layout exports `viewport` (`viewport-fit=cover`, light/dark `theme-color`) and `appleWebApp` metadata, plus an explicit `apple-mobile-web-app-capable` tag because Next 15 only emits `mobile-web-app-capable`. The dashboard `<main>` pads by `env(safe-area-inset-top)`. The middleware allows the manifest and icon routes without a session. The audit computed WCAG ratios from hex values and found six failing pairs, all system blue/red used as text or as a white-text button fill, plus secondary text on `--bg-subtle`. Fix: new `--accent` (`#0040DD` / `#409CFF`), `--accent-fill` (`#0060DF`) and `--danger` (`#D70015` / `#FF453A`) tokens for UI; category colors remain only on categories and meter fills; light `--text-secondary` darkened to `#636366`. The glass chrome gains Reduce Transparency (opaque) and Increase Contrast (hairline border) fallbacks. Not done: scroll-edge fade under the tab bar (`liquid-glass.md` checklist §6).
 
+### ADR-011: Public-Repo Safety
+- **Date:** 2026-10-22
+- **Context:** The GitHub repo is public (needed for the Vercel import).
+- **Decision:** Real values live only in `.env.local` (git-ignored) and Vercel env vars; `.env.example` stays blank. `NEXT_PUBLIC_SUPABASE_*` values are public by design (shipped to every browser); data safety rests on RLS (all 4 tables, `anon` has no grants). Never commit a Supabase `sb_secret_…`/service-role key. `scripts/check-secrets.mjs` blocks env files and key patterns: as a pre-commit hook (`.githooks/`, enabled by `npm install` via `prepare`) and in CI (`.github/workflows/secret-check.yml`). Full-history scan on this date found no secrets.
+
 ---
 
 ## 3. Known Edge Cases & Rules

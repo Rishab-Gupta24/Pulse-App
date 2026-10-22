@@ -1,0 +1,3 @@
+#!/bin/sh
+# Refuses commits that contain secrets. Enabled by `npm install` (see "prepare" in package.json).
+exec node scripts/check-secrets.mjs
