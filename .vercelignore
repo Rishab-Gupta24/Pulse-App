@@ -1,0 +1,10 @@
+# Files the Vercel CLI must never upload. Env values come from the project's
+# Environment Variables instead, so local env files stay on this machine.
+.env
+.env.*
+!.env.example
+node_modules
+.next
+.git
+.design-rules
+.claude
