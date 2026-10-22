@@ -39,10 +39,10 @@
 ---
 
 ## Phase 4: Daily Task Tracker Module
-- [ ] **4.1** Create `src/hooks/useTasks.ts` with TanStack Query for fetching today's tasks and performing optimistic `addTask`, `toggleTask`, and `deleteTask` mutations.
-- [ ] **4.2** Build `src/components/tasks/AddTaskForm.tsx`:
+- [x] **4.1** Create `src/hooks/useTasks.ts` with TanStack Query for fetching today's tasks and performing optimistic `addTask`, `toggleTask`, and `deleteTask` mutations.
+- [x] **4.2** Build `src/components/tasks/AddTaskForm.tsx`:
   - Single clean text input + 4 solid color selector pills (`RED`, `BLUE`, `GREEN`, `AMBER`) + `"Add Task"` button.
-- [ ] **4.3** Build `src/components/tasks/TaskItem.tsx`:
+- [x] **4.3** Build `src/components/tasks/TaskItem.tsx`:
   - Solid opaque surface row (`--bg-surface`), `44x44px` accessible checkbox, task title (strikethrough + muted opacity when completed), solid category badge, and delete button.
 
 ---
