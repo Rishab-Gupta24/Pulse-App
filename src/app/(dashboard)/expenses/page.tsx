@@ -1,12 +1,11 @@
 import StreakHeader from "@/components/layout/StreakHeader";
-import CategoryFilter from "@/components/shared/CategoryFilter";
+import ExpensesView from "@/components/expenses/ExpensesView";
 
-// Budget meters and expense list arrive in Phase 5.
 export default function ExpensesPage() {
   return (
     <>
       <StreakHeader title="Expenses" />
-      <CategoryFilter />
+      <ExpensesView />
     </>
   );
 }

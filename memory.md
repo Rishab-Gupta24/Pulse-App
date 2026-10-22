@@ -7,7 +7,7 @@
 ## 1. Current Project Context
 - **App Name:** Pulse (Daily Task & Expense Tracker)
 - **Target Devices:** User's iPhone (via iOS Home Screen PWA) & Laptop (Desktop Browser)
-- **Current Phase:** Phase 4 — Daily Task Tracker Complete (next: Phase 5, Expenses & Budgets)
+- **Current Phase:** Phase 5 — Expense & Budget Tracker Complete (next: Phase 6, Streaks & Realtime)
 - **Supabase Project:** `Pulse` (ref `jlcyiuxiijticddsraje`, region `ap-south-1`, free tier). The older `Leveling` project is unrelated.
 - **Design System Reference:** `https://github.com/dickwu/apple-design-skill.git` (Apple HIG + Liquid Glass specification)
 
@@ -55,6 +55,11 @@
 - **Context:** Rules.md requires instant UI with rollback on failure and no `confirm()` dialogs.
 - **Decision:** `useTasks` caches today's tasks under `["tasks", localDate]`. Inserts use a client-generated UUID so the optimistic row and stored row share an id. Failed mutations roll back only the affected row (not a whole-cache snapshot, so concurrent mutations aren't clobbered) and show a toast; every mutation invalidates the query on settle. Delete is immediate with an "Undo" toast that re-inserts the same row. Toasts are a Zustand store (`useToast` / `showToast`) rendered by a solid `Toaster` in `app/providers.tsx`, which also hosts the `QueryClientProvider`. `CategoryPicker` is the shared single-choice selector for the task and (Phase 5) expense forms. Swipe-to-delete from the PRD is not built; rows have a 44px delete button.
 
+### ADR-008: Expense Periods, Money Math & Budget Defaults
+- **Date:** 2026-10-22
+- **Context:** Phase 5 needs Today / This Week / This Month totals without unbounded queries.
+- **Decision:** Weeks run **Monday–Sunday**. `useExpenses` fetches one range covering both the current week and month (`getBudgetPeriods().rangeStart…rangeEnd`, so a week that starts in the previous month still counts fully) under `["expenses", rangeStart, rangeEnd]`; the Expenses page lists this month only. Amounts are summed in integer cents (`lib/utils/money.ts`) and NUMERIC values are coerced with `Number()`. `useBudget` returns the `budgets` column defaults (20 / 140 / 600 / `$`) until the user saves; saving upserts with the session's `user_id`. Meter fill: green < 80%, amber 80–100%, red when over, and the text says "over" so color is never the only signal. Today view: shared category filter above a `grid-cols-1 lg:grid-cols-2` grid (tasks left, budget right). Settings also has Sign Out (clears the query cache).
+
 ---
 
 ## 3. Known Edge Cases & Rules
@@ -68,6 +73,7 @@
 | Date | Issue / Bug | Root Cause | Resolution |
 | :--- | :--- | :--- | :--- |
 | *YYYY-MM-DD* | *Template entry* | *Root cause description* | *Fix applied & files touched* |
+| 2026-10-22 | Today page scrolled horizontally on iPhone width | Implicit grid track sized to the forms' min-content (inputs' intrinsic width) | Added `grid-cols-1` so the track is `minmax(0, 1fr)` — `src/app/(dashboard)/page.tsx` |
 
 ---
 
@@ -77,3 +83,4 @@
 - **2026-10-22:** Phase 2 complete — Supabase project `Pulse`, schema + RLS + Realtime, generated `src/types/database.ts`, Supabase browser/server/middleware clients, `/login` page and `/auth/callback` route.
 - **2026-10-22:** Phase 3 complete — `StreakHeader`, `LiquidGlassBar`, `CategoryBadge`, `CategoryFilter`, dashboard route group with Today/Expenses/Settings placeholders. Verified at 375px and 1280px in light and dark mode.
 - **2026-10-22:** Phase 4 complete — `useTasks`, `AddTaskForm`, `TaskItem`, `TodayTasks`, `CategoryPicker`, toast system, Query provider. Verified add / toggle (persists across reload) / delete / undo / category filter against Supabase; failure rollback path not exercised.
+- **2026-10-22:** Phase 5 complete — `useBudget`, `useExpenses`, `BudgetMeters`, `AddExpenseForm`, `ExpenseItem`, `ExpenseList`, `TodayBudget`, `ExpensesView`, Settings budget form + Sign Out. Verified logging, amount validation, green→amber→red meters, delete/undo recalculation, budget save + hierarchy warning, two-column laptop layout; test rows removed.

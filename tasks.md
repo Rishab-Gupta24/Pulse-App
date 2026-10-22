@@ -48,15 +48,15 @@
 ---
 
 ## Phase 5: Multi-Horizon Expense & Budget Tracker Module
-- [ ] **5.1** Create `src/hooks/useExpenses.ts` to fetch expenses for the current Month, current Week, and Today, along with the user's configured limits from `budgets`.
-- [ ] **5.2** Build `src/components/expenses/BudgetMeters.tsx`:
+- [x] **5.1** Create `src/hooks/useExpenses.ts` to fetch expenses for the current Month, current Week, and Today, along with the user's configured limits from `budgets`.
+- [x] **5.2** Build `src/components/expenses/BudgetMeters.tsx`:
   - Three minimalist horizontal progress bars (**Today's Budget**, **Weekly Budget**, **Monthly Budget**).
   - Bar fill uses solid `--color-green` when `< 80%`, solid `--color-amber` when `80%–100%`, and solid `--color-red` if over budget.
   - Displays exact `"$X spent · $Y left"` using `tabular-nums`.
-- [ ] **5.3** Build `src/components/expenses/AddExpenseForm.tsx` and `ExpenseItem.tsx`:
+- [x] **5.3** Build `src/components/expenses/AddExpenseForm.tsx` and `ExpenseItem.tsx`:
   - Numeric input (`inputMode="decimal"` for iPhone numeric keypad), title input, and the exact same 4 category color pills (`RED`, `BLUE`, `GREEN`, `AMBER`).
   - Expense list grouped cleanly with category color badge, amount, and delete button.
-- [ ] **5.4** Build `src/app/(dashboard)/settings/page.tsx` allowing the user to set and save their **Daily Budget**, **Weekly Budget**, and **Monthly Budget**.
+- [x] **5.4** Build `src/app/(dashboard)/settings/page.tsx` allowing the user to set and save their **Daily Budget**, **Weekly Budget**, and **Monthly Budget**.
 
 ---
 
