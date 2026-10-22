@@ -121,6 +121,13 @@ Following Apple's Liquid Glass rules from `dickwu/apple-design-skill`:
 * Solid card with a month header (chevron buttons, "Today" shortcut when off-month) and a Monday-first 7-column grid of 44×48px day cells.
 * Cell indicators: past/today **all done** → small blue flame; **unfinished** → small hollow ring; **future** → count of planned tasks (repeats included). Selected day = `--accent-fill` with white text; today = 2px inset `--accent` ring; days outside the month at 40% opacity.
 * Day detail beside the grid on laptop (below it on iPhone): a relative label (Today / Tomorrow / Upcoming / Past day), the full date, and the task list. Future days add an "Add to <date>" form.
+* **Edit Tasks pencil (laptop, ≥ 768px):** a 44px pill aligned to the calendar card's top-right edge, just above it. At rest it's `--bg-surface` with `--text-secondary` text. On hover the text turns `--accent`, the background turns `--bg-subtle`, and the pencil tilts −12°, scales 1.25× and lifts 2px over 200ms (`motion-safe` only). When active it becomes a filled `--accent-fill` "Done Editing" pill, and each editable task row shows an `--accent` pencil button.
+* **Long-press (iPhone):** a 0.5s hold on a task opens the action sheet; moving more than 10px cancels it so scrolling never triggers it. Rows disable text selection and the iOS callout. A hint under the list reads "Long-press a task to edit or delete it."
+* **Task action sheet:** Liquid Glass sheet (bottom-anchored with safe-area padding on iPhone, centered on laptop) over a 30% black backdrop.
+  * **Header:** the day, the task title (20px bold) and its "Repeats …" line.
+  * **Actions:** solid `--bg-surface` rows: Edit Task (accent pencil), Delete for This Day / Delete Task and Delete All Repeats… (`--danger` text). The confirmation step pairs Keep It with Delete All Repeats in `--danger` text on a solid surface, never white on red.
+  * **Edit view:** Save for This Day (surface, accent text) and Save for All Days (`--accent-fill`).
+  * **Closing:** Escape, the ✕ button or the backdrop closes it.
 
 ## 8. Edit Mode & Expense Scope
 

@@ -53,7 +53,11 @@ A single set of solid, semantic color categories shared across **both** Tasks an
 
 ### 3.6 Calendar
 - **Month View:** Monday-first month grid. Past days show a blue flame when every task was done, or a ring when unfinished. Future days show how many tasks are planned, including repeating tasks.
-- **Day Detail:** Tap a day to see its tasks. Past days are read-only. Today links back to the Today tab. Future days list their planned and repeating tasks, and one-off tasks (e.g. an appointment) can be added or deleted there.
+- **Day Detail:** Tap a day to see its tasks. Past days are read-only. Today links back to the Today tab. Future days list their planned and repeating tasks, and one-off tasks (e.g. an appointment) can be added there.
+- **Edit & Delete Scheduled Tasks:** Today's and future tasks, including repeats that haven't been created yet, open an action sheet:
+  - **iPhone:** long-press a task.
+  - **Laptop:** an **Edit Tasks** pencil just above the calendar's top-right corner (it animates on hover) puts a pencil on every editable task. Right-click also works.
+  - **Actions:** **Edit Task** (title, note, category) and **Delete**. For a repeating task, choose **This Day** or **All Days**. "Delete All Repeats" stops the repeat and removes it from today onward, while finished days keep their history.
 
 ### 3.5 Cross-Platform Sync (iPhone + Laptop)
 - **Instant Cloud Sync:** Adding a task on the laptop reflects on the iPhone within milliseconds via WebSockets/Realtime database replication.

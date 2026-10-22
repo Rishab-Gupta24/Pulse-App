@@ -67,13 +67,14 @@ The app lives in the repo root (see `memory.md` ADR-004).
 │   │   ├── layout/                 # LiquidGlassBar, StreakHeader, StreakLine, DataSync
 │   │   ├── shared/                 # CategoryBadge/Filter/Picker, WeekdayPicker, BlueFlame, Toaster
 │   │   ├── tasks/                  # TodayTasks (view/edit mode), TaskItem, AddTaskForm, AllDoneCelebration
-│   │   ├── calendar/CalendarView.tsx
+│   │   ├── calendar/                # CalendarView (grid + day panel), TaskActionSheet
 │   │   ├── expenses/               # BudgetMeters, AddExpenseForm, ExpenseItem, ExpenseList, TodayBudget, ExpensesView
 │   │   └── settings/               # BudgetSettingsForm, SignOutButton
 │   ├── hooks/
 │   │   ├── useTasks.ts             # Tasks for one day: optimistic add/toggle/delete/repeat
 │   │   ├── useTaskTemplates.ts     # Active repeating tasks; stop repeating
-│   │   ├── useTaskCounts.ts        # Per-day counts for the calendar grid
+│   │   ├── useTaskCounts.ts        # Per-day counts + claimed (template, day) pairs for the calendar
+│   │   ├── useLongPress.ts         # Long-press / right-click gesture (calendar task actions)
 │   │   ├── useExpenses.ts          # Week+month expenses, scope-aware totals
 │   │   ├── useBudget.ts            # Budget caps (defaults until saved)
 │   │   ├── useStreaks.ts           # get_streaks RPC, daily_logs range, today's snapshot upsert
@@ -198,3 +199,8 @@ CREATE TABLE daily_logs (
 | `materialize_tasks(p_date)` | Create that day's copies of active repeating tasks (idempotent) |
 | `create_repeating_task(...)` | New repeating task (client-generated ids for optimistic UI); creates today's copy only if today is one of its days |
 | `make_task_repeating(p_task_id, p_template_id, p_weekdays)` | Turn a task into a repeat, or change an existing repeat's days |
+| `create_task_for_repeat_day(p_template_id, p_date, p_task_id, …)` | Edit one future day of a repeat before its copy exists: claims the day and creates a custom copy |
+| `update_repeating_task(p_template_id, p_today, …)` | "Save for all days": update the repeat and every copy from today on |
+| `delete_repeating_task(p_template_id, p_today)` | "Delete all repeats": deactivate it, then remove copies after today, plus today's if not done |
+
+"Delete for this day" on a repeat that has no copy yet just inserts its `(template_id, day)` claim into `template_materializations`, and Undo deletes the claim. The insert policy on that table requires the template to belong to the caller.

@@ -1,5 +1,5 @@
 // Generated from the Supabase schema (project "Pulse"). Regenerate after schema changes.
-// Manual edit: create_repeating_task.p_note is nullable (generator types SQL args as non-null).
+// Manual edit: p_note args are nullable (generator types SQL args as non-null).
 
 export type Json =
   | string
@@ -230,6 +230,31 @@ export type Database = {
           p_title: string
           p_today: string
           p_weekdays: number[]
+        }
+        Returns: undefined
+      }
+      create_task_for_repeat_day: {
+        Args: {
+          p_category: Database["public"]["Enums"]["category_color"]
+          p_date: string
+          p_note: string | null
+          p_task_id: string
+          p_template_id: string
+          p_title: string
+        }
+        Returns: undefined
+      }
+      delete_repeating_task: {
+        Args: { p_template_id: string; p_today: string }
+        Returns: number
+      }
+      update_repeating_task: {
+        Args: {
+          p_category: Database["public"]["Enums"]["category_color"]
+          p_note: string | null
+          p_template_id: string
+          p_title: string
+          p_today: string
         }
         Returns: undefined
       }

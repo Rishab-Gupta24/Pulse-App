@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Repeat, Trash2 } from "lucide-react";
+import { Check, Pencil, Repeat, Trash2 } from "lucide-react";
 import CategoryBadge from "@/components/shared/CategoryBadge";
 import WeekdayPicker from "@/components/shared/WeekdayPicker";
+import { useLongPress } from "@/hooks/useLongPress";
 import { CATEGORIES } from "@/lib/constants/categories";
 import { formatWeekdays, type Weekday } from "@/lib/utils/dates";
 import { cn } from "@/lib/utils/cn";
@@ -21,6 +22,7 @@ export default function TaskItem({
   onDelete,
   onSetRepeat,
   onStopRepeat,
+  onOpenActions,
 }: {
   task: Task;
   /** Active template when this task repeats. */
@@ -30,16 +32,29 @@ export default function TaskItem({
   onDelete?: (task: Task) => void;
   onSetRepeat?: (task: Task, weekdays: Weekday[]) => void;
   onStopRepeat?: (templateId: string) => void;
+  /**
+   * Calendar: opens the task's action sheet. Always reachable by long-press /
+   * right-click; with `editing`, an explicit pencil button is shown too.
+   */
+  onOpenActions?: (task: Task) => void;
 }) {
   const done = task.is_completed;
   const { dotClass } = CATEGORIES[task.category];
   const [repeatOpen, setRepeatOpen] = useState(false);
   const [days, setDays] = useState<Weekday[]>(() => (template?.weekdays ?? []) as Weekday[]);
   const canToggle = !editing && Boolean(onToggle);
+  const longPress = useLongPress(onOpenActions ? () => onOpenActions(task) : null);
 
   return (
     <li className="bg-surface">
-      <div className="flex items-center gap-1 py-1 pl-1 pr-1">
+      <div
+        {...longPress}
+        className={cn(
+          "flex items-center gap-1 py-1 pl-1 pr-1",
+          // Long-press must not start text selection or the iOS callout menu.
+          onOpenActions && "select-none [-webkit-touch-callout:none]",
+        )}
+      >
         <button
           type="button"
           role="checkbox"
@@ -89,6 +104,17 @@ export default function TaskItem({
           </div>
         </div>
 
+        {editing && onOpenActions && (
+          <button
+            type="button"
+            aria-label={`Edit or delete "${task.title}"`}
+            aria-haspopup="dialog"
+            onClick={() => onOpenActions(task)}
+            className="flex size-11 shrink-0 items-center justify-center rounded-xl text-accent hover:bg-subtle"
+          >
+            <Pencil size={18} strokeWidth={1.75} aria-hidden />
+          </button>
+        )}
         {editing && onSetRepeat && (
           <button
             type="button"

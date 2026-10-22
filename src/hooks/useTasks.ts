@@ -211,6 +211,151 @@ export function useTasks(date: string = toLocalDateString()) {
       Promise.all([settle(), queryClient.invalidateQueries({ queryKey: templatesQueryKey })]),
   });
 
+  const settleWithTemplates = () =>
+    Promise.all([settle(), queryClient.invalidateQueries({ queryKey: templatesQueryKey })]);
+
+  /** Edit this day's stored task (one-off, or this day's copy of a repeat). */
+  const updateTask = useMutation({
+    mutationFn: async ({ task, fields }: { task: Task; fields: TaskFields }) => {
+      const { error } = await supabase.from("tasks").update(fields).eq("id", task.id);
+      if (error) throw error;
+    },
+    onMutate: async ({ task, fields }) => {
+      await queryClient.cancelQueries({ queryKey });
+      setTasks((tasks) => tasks.map((t) => (t.id === task.id ? { ...t, ...fields } : t)));
+    },
+    onError: (_error, { task }) => {
+      setTasks((tasks) => tasks.map((t) => (t.id === task.id ? task : t)));
+      showToast("Couldn't save task. Try again.");
+    },
+    onSettled: settle,
+  });
+
+  /** Edit a repeat on this day only, before its copy exists: creates the copy. */
+  const editRepeatDay = useMutation({
+    mutationFn: async (task: Task) => {
+      const { error } = await supabase.rpc("create_task_for_repeat_day", {
+        p_template_id: task.template_id ?? "",
+        p_date: date,
+        p_task_id: task.id,
+        p_title: task.title,
+        p_note: task.note,
+        p_category: task.category,
+      });
+      if (error) throw error;
+    },
+    onMutate: async (task) => {
+      await queryClient.cancelQueries({ queryKey });
+      setTasks((tasks) => [...tasks, task]);
+    },
+    onError: (_error, task) => {
+      setTasks((tasks) => tasks.filter((t) => t.id !== task.id));
+      showToast("Couldn't save task. Try again.");
+    },
+    onSettled: settle,
+  });
+
+  /** Undo for skipRepeatDay: release the claimed day so the repeat returns. */
+  const unskipRepeatDay = useMutation({
+    mutationFn: async (templateId: string) => {
+      const { error } = await supabase
+        .from("template_materializations")
+        .delete()
+        .eq("template_id", templateId)
+        .eq("task_date", date);
+      if (error) throw error;
+    },
+    onError: () => showToast("Couldn't undo. Try again."),
+    onSettled: settle,
+  });
+
+  /** Remove a repeat for this day only, before its copy exists, by claiming the day. */
+  const skipRepeatDay = useMutation({
+    mutationFn: async (templateId: string) => {
+      const { error } = await supabase
+        .from("template_materializations")
+        .insert({ template_id: templateId, task_date: date });
+      if (error) throw error;
+    },
+    onSuccess: (_data, templateId) => {
+      showToast("Removed for this day.", {
+        label: "Undo",
+        onClick: () => unskipRepeatDay.mutate(templateId),
+      });
+    },
+    onError: () => showToast("Couldn't remove task. Try again."),
+    onSettled: settle,
+  });
+
+  /** "Save for all days": the repeat and every copy from today on. */
+  const updateAllRepeats = useMutation({
+    mutationFn: async ({ templateId, fields }: { templateId: string; fields: TaskFields }) => {
+      const { error } = await supabase.rpc("update_repeating_task", {
+        p_template_id: templateId,
+        p_today: toLocalDateString(),
+        p_title: fields.title,
+        p_note: fields.note,
+        p_category: fields.category,
+      });
+      if (error) throw error;
+    },
+    onMutate: async ({ templateId, fields }) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<TaskList>(queryKey);
+      if (date >= toLocalDateString()) {
+        setTasks((tasks) =>
+          tasks.map((t) => (t.template_id === templateId ? { ...t, ...fields } : t)),
+        );
+      }
+      return { previous };
+    },
+    onSuccess: () => showToast("Updated on all repeating days."),
+    onError: (_error, _vars, context) => {
+      queryClient.setQueryData(queryKey, context?.previous);
+      showToast("Couldn't update the repeating task. Try again.");
+    },
+    onSettled: settleWithTemplates,
+  });
+
+  /** "Delete all repeats": stop repeating and remove upcoming copies (done days stay). */
+  const deleteAllRepeats = useMutation({
+    mutationFn: async (templateId: string) => {
+      const { error } = await supabase.rpc("delete_repeating_task", {
+        p_template_id: templateId,
+        p_today: toLocalDateString(),
+      });
+      if (error) throw error;
+    },
+    onMutate: async (templateId) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<TaskList>(queryKey);
+      const today = toLocalDateString();
+      setTasks((tasks) =>
+        tasks.filter(
+          (t) =>
+            t.template_id !== templateId ||
+            date < today ||
+            (date === today && t.is_completed),
+        ),
+      );
+      return { previous };
+    },
+    onSuccess: () => showToast("Repeating task deleted."),
+    onError: (_error, _templateId, context) => {
+      queryClient.setQueryData(queryKey, context?.previous);
+      showToast("Couldn't delete the repeating task. Try again.");
+    },
+    onSettled: settleWithTemplates,
+  });
+
+  /** Validates edited fields; null when invalid. */
+  function normalizeFields(fields: TaskFields): TaskFields | null {
+    const title = normalizeTaskTitle(fields.title);
+    const note = normalizeTaskNote(fields.note ?? "");
+    if (!title || note === undefined || !isCategoryColor(fields.category)) return null;
+    return { title, note, category: fields.category };
+  }
+
   return {
     date,
     isToday,
@@ -245,5 +390,44 @@ export function useTasks(date: string = toLocalDateString()) {
     deleteTask: (task: Task) => deleteTask.mutate(task),
     setRepeat: (task: Task, weekdays: Weekday[]) =>
       setRepeat.mutate({ task, weekdays, templateId: task.template_id ?? crypto.randomUUID() }),
+
+    /**
+     * Edit one day. `stored` = the task row exists; otherwise it's a projected
+     * repeat (future day, no copy yet) and a copy is created. False if invalid.
+     */
+    editDay: (task: Task, stored: boolean, fields: TaskFields): boolean => {
+      const valid = normalizeFields(fields);
+      if (!valid) return false;
+      if (stored) {
+        updateTask.mutate({ task, fields: valid });
+      } else {
+        editRepeatDay.mutate({
+          ...task,
+          ...valid,
+          id: crypto.randomUUID(),
+          created_at: new Date().toISOString(),
+        });
+      }
+      return true;
+    },
+    /** Edit the repeat for all days from today on. False if invalid. */
+    editAllDays: (templateId: string, fields: TaskFields): boolean => {
+      const valid = normalizeFields(fields);
+      if (!valid) return false;
+      updateAllRepeats.mutate({ templateId, fields: valid });
+      return true;
+    },
+    /** Delete for this day: removes the stored row, or skips a projected repeat. */
+    deleteDay: (task: Task, stored: boolean) => {
+      if (stored) deleteTask.mutate(task);
+      else if (task.template_id) skipRepeatDay.mutate(task.template_id);
+    },
+    deleteAllRepeats: (templateId: string) => deleteAllRepeats.mutate(templateId),
   };
+}
+
+export interface TaskFields {
+  title: string;
+  note: string | null;
+  category: CategoryColor;
 }

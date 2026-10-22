@@ -16,7 +16,8 @@
 9. **Repeats Go Through the RPCs:** Create and change repeating tasks only via `create_repeating_task`, `make_task_repeating` and `materialize_tasks`. Never insert template copies directly, or a copy the user deleted can come back.
 10. **Expense Scope Is Respected Everywhere:** Totals and streaks MUST follow `scope`: today = `DAY` only, week = `DAY` + `WEEK`, month = all.
 11. **Motion Is CSS-Only and Optional:** Animations (live flame, all-done celebration) use CSS keyframes in `globals.css`, use flat shapes only (no gradients or glows), are brief and dismissible, and are turned off under `prefers-reduced-motion`.
-12. **No Secrets in Git:** Real values live only in `.env.local` and Vercel's Environment Variables. The pre-commit hook and CI run `scripts/check-secrets.mjs`. Never bypass them with `--no-verify`.
+12. **Gestures Always Have a Visible Alternative:** Long-press is a shortcut, never the only way. Every long-press action is also reachable from a visible control (the calendar's Edit Tasks pencil) or by right-click, and the UI says how ("Long-press a task to edit or delete it."). Destructive actions that affect more than one day get an inline confirmation step.
+13. **No Secrets in Git:** Real values live only in `.env.local` and Vercel's Environment Variables. The pre-commit hook and CI run `scripts/check-secrets.mjs`. Never bypass them with `--no-verify`.
 
 ---
 

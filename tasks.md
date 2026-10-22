@@ -90,3 +90,13 @@
 - [x] **8.7** Calendar tab: month grid (done / unfinished / planned counts incl. repeats) and day detail with adding tasks to future days.
 - [x] **8.8** All-done celebration (view mode only), respects reduced motion.
 - [x] **8.9** Re-deploy to Vercel (`npx vercel deploy --prod --scope plus-84e9`) after committing.
+
+---
+
+## Phase 9: Calendar Task Actions
+- [x] **9.1** Migration `repeat_day_edits`: `create_task_for_repeat_day`, `update_repeating_task`, `delete_repeating_task` RPCs; `template_materializations` insert policy also requires owning the template (security fix).
+- [x] **9.2** `TaskActionSheet`: Edit Task (title, note, category) and Delete; repeating tasks choose **This Day** or **All Days**; "Delete All Repeats…" has an inline confirmation step.
+- [x] **9.3** iPhone: long-press a task in the calendar day panel (0.5s, cancelled by scrolling). Everywhere: right-click.
+- [x] **9.4** Laptop: **Edit Tasks** pencil just above the calendar's top-right (comes alive on hover); edit mode shows a pencil on each editable task.
+- [x] **9.5** Projected repeats (future days with no copy yet) can be edited or removed for one day; past days stay read-only.
+- [x] **9.6** Commit, push and re-deploy to Vercel (`npx vercel deploy --prod --scope plus-84e9`).

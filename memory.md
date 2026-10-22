@@ -7,7 +7,7 @@
 ## 1. Current Project Context
 - **App Name:** Pulse (Daily Task & Expense Tracker)
 - **Target Devices:** User's iPhone (via iOS Home Screen PWA) & Laptop (Desktop Browser)
-- **Current Phase:** Phase 8 (planning, repeats, motion) built and verified locally; not yet re-deployed. 7.3 iPhone sync test still pending.
+- **Current Phase:** Phase 9 (edit / delete scheduled and repeating tasks from the calendar) built and verified locally; not yet deployed. Phase 8 is live. 7.3 iPhone sync test still pending.
 - **Supabase Project:** `Pulse` (ref `jlcyiuxiijticddsraje`, region `ap-south-1`, free tier). The older `Leveling` project is unrelated.
 - **Hosting:** Vercel project `plus-84e9/pulse`, live at https://pulse-pi-teal.vercel.app. Deployed with the Vercel CLI (`npx vercel deploy --prod --scope plus-84e9`); GitHub auto-deploy is not connected yet. The Vercel MCP connector cannot access team `plus-84e9` (403 even after approval), so use the CLI.
 - **Repo:** https://github.com/Rishab-Gupta24/Pulse-App (`main`).
@@ -92,6 +92,16 @@
   - **Motion:** the live flame and the celebration are CSS keyframes on flat shapes, with a `--flame-core` token so no hex values sit in JSX, and both are turned off under reduced motion.
   - **Navigation:** the tab bar has 4 tabs (Today, Calendar, Expenses, Settings).
 
+### ADR-014: Calendar Task Actions (Edit / Delete, This Day vs. All Days)
+- **Date:** 2026-10-22
+- **Context:** Tasks scheduled for future days, and especially projected repeats (no stored row yet), could not be edited or deleted.
+- **Decision:** One `TaskActionSheet` (bottom sheet on iPhone, centered dialog on laptop; Liquid Glass is allowed because it's a sheet) offers **Edit Task** and **Delete**. Repeating tasks get "This Day" vs. "All Days" variants; "Delete All Repeats…" has an inline confirmation step instead of `confirm()`.
+  - **Entry points:** long-press (0.5s, cancelled after 10px of movement) on iPhone; right-click anywhere; and on laptop an **Edit Tasks** pencil just above the calendar's top-right that shows a pencil on each editable row. Past days are read-only.
+  - **This day, stored row:** `UPDATE` / `DELETE tasks` (Undo toast).
+  - **This day, projected repeat:** delete = claim `(template, day)` in `template_materializations` without creating a task (Undo releases the claim); edit = `create_task_for_repeat_day` (claim + custom copy, atomically).
+  - **All days:** `update_repeating_task(p_today)` updates the template and every copy from today on, including copies customized for one day. `delete_repeating_task(p_today)` sets `active = false` and deletes copies after today, plus today's copy only if it isn't done, so finished days keep their history.
+  - **Calendar projection** now excludes days claimed in `template_materializations` (`useTaskCounts().claimed`), not just days that have a stored copy.
+
 ---
 
 ## 3. Known Edge Cases & Rules
@@ -100,6 +110,8 @@
 - **No Carry-Over:** Unfinished tasks stay on their own day; only repeating tasks appear on new days.
 - **Deleted Repeat Copy:** Deleting today's copy of a repeating task removes it for that day only; it is not re-created on reload (the materialization row remains). Undo restores it.
 - **Repeat Created Mid-Week:** A new repeating task gets a copy today only if today is one of its weekdays; past days are never backfilled.
+- **Edit "All Days" Overrides One-Day Edits:** Saving for all days overwrites copies from today on, including a day that was edited on its own.
+- **Delete All Repeats Keeps Done History:** Today's copy survives if it is already ticked off; past copies are never removed.
 - **Scoped Expenses:** WEEK / MONTH expenses never affect the daily meter or the Budget streak.
 - **Budget Hierarchy Warning:** In Settings, warn the user if `Daily Budget * 7 > Weekly Budget` or `Weekly Budget * 4 > Monthly Budget`, while still allowing custom overrides.
 
@@ -109,6 +121,9 @@
 | Date | Issue / Bug | Root Cause | Resolution |
 | :--- | :--- | :--- | :--- |
 | *YYYY-MM-DD* | *Template entry* | *Root cause description* | *Fix applied & files touched* |
+| 2026-10-22 | Tasks scheduled for a future day (and projected repeats) couldn't be edited or deleted | Calendar day panel only offered delete for stored one-off rows; projected repeats had no stored row to act on | Phase 9: `TaskActionSheet` with long-press / right-click / pencil edit mode; claim-based "delete this day"; `create_task_for_repeat_day`, `update_repeating_task`, `delete_repeating_task` RPCs |
+| 2026-10-22 | Another user could block someone's repeat on a given day (needed their template UUID) | `template_materializations` insert policy checked only `user_id`, not template ownership | Policy now also requires the template to belong to `auth.uid()`; verified: a foreign user's insert fails with 42501 (migration `repeat_day_edits`) |
+| 2026-10-22 | A second right-click on a calendar task didn't open the sheet | `useLongPress` set `fired` on right-click, and pointer-down returned early for non-primary buttons before resetting it | Reset `fired` on every pointer-down; only a held press sets it (`src/hooks/useLongPress.ts`) |
 | 2026-10-22 | `daily_logs.tasks_total` stayed 1 after deleting the day's only task | Expense and task deletes ran concurrently; each trigger recomputed from a snapshot missing the other's delete, and the last upsert won with stale counts | Added a per-(user, day) `pg_advisory_xact_lock` before recomputing in `private.refresh_daily_log`; migration `serialize_daily_log_refresh` also repaired existing rows |
 | 2026-10-22 | Today page scrolled horizontally on iPhone width | Implicit grid track sized to the forms' min-content (inputs' intrinsic width) | Added `grid-cols-1` so the track is `minmax(0, 1fr)` — `src/app/(dashboard)/page.tsx` |
 
@@ -123,6 +138,8 @@
 - **2026-10-22:** Phase 5 complete — `useBudget`, `useExpenses`, `BudgetMeters`, `AddExpenseForm`, `ExpenseItem`, `ExpenseList`, `TodayBudget`, `ExpensesView`, Settings budget form + Sign Out. Verified logging, amount validation, green→amber→red meters, delete/undo recalculation, budget save + hierarchy warning, two-column laptop layout; test rows removed.
 - **2026-10-22:** Phase 6 complete — migrations `daily_logs_sync_and_streaks`, `move_refresh_daily_log_to_private`, `serialize_daily_log_refresh`; `useStreaks`, `useTodayLogSnapshot`, `useRealtimeSync`, `DataSync`. Verified streak logic in a rolled-back SQL run (task 2→3 when today completes; budget 3 after an over-budget day), and in two browser tabs that add/complete/delete and over-budget changes appear in the other tab and update both streaks.
 - **2026-10-22:** Exported the 5 applied migrations to `supabase/migrations/` (MD5-verified against `supabase_migrations.schema_migrations`).
+- **2026-10-22:** Phase 8 committed (`03219c5`) and deployed to production.
+- **2026-10-22:** Phase 9 — calendar task actions (long-press on iPhone, right-click, Edit Tasks pencil on laptop) with edit / delete for this day or all repeating days; migration `20261022192913_repeat_day_edits` (3 RPCs + materialization policy fix). Verified at 375px and 1366px; test data removed; the user's 2 repeats and "GYM" task untouched.
 - **2026-10-22:** Deployed to Vercel with the CLI (https://pulse-pi-teal.vercel.app); added `.vercelignore`, secret guard (ADR-011).
 - **2026-10-22:** Phase 8 — edit mode, task notes, repeating tasks, expense scope, streak line with live flame, calendar tab, all-done celebration; migration `20261022190238_repeats_notes_scopes_streak_stats`. Verified at 375px (dark) and 1366px (light); test data removed and the user's "GYM" task restored to not done.
 - **2026-10-22:** Phase 7.1–7.2 complete — manifest, icons, iOS meta tags, safe-area padding; HIG audit: no gradients, glass only on the 2 nav surfaces (never stacked), all 45 visible controls ≥ 44×44 px at 375 px, all text pairs ≥ 4.5:1 after the token fix. Production build verified; manifest + icons return 200 without a session.
