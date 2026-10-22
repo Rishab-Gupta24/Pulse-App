@@ -61,10 +61,10 @@
 ---
 
 ## Phase 6: Dual Streak Engine & Real-Time Cross-Device Sync
-- [ ] **6.1** Create `src/hooks/useStreaks.ts`:
+- [x] **6.1** Create `src/hooks/useStreaks.ts`:
   - Automatically upserts today's row in `daily_logs` whenever tasks or expenses change.
   - Computes consecutive days where `task_day_won = true` (Task Streak) and `budget_day_won = true` (Budget Streak).
-- [ ] **6.2** Create `src/hooks/useRealtimeSync.ts`:
+- [x] **6.2** Create `src/hooks/useRealtimeSync.ts`:
   - Listens to Supabase `postgres_changes` channel and invalidates React Query caches so mutations on the Laptop appear on the iPhone in real time without refreshing.
 
 ---

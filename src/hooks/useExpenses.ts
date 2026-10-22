@@ -47,7 +47,12 @@ export function useExpenses() {
   const setExpenses = (update: (expenses: ExpenseList) => ExpenseList) =>
     queryClient.setQueryData<ExpenseList>(queryKey, (expenses = []) => update(expenses));
 
-  const settle = () => queryClient.invalidateQueries({ queryKey });
+  // Streaks change too: triggers refresh `daily_logs` on every expense write.
+  const settle = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey }),
+      queryClient.invalidateQueries({ queryKey: ["streaks"] }),
+    ]);
 
   const query = useQuery({
     queryKey,

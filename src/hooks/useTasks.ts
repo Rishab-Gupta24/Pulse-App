@@ -36,7 +36,12 @@ export function useTasks() {
   const setTasks = (update: (tasks: TaskList) => TaskList) =>
     queryClient.setQueryData<TaskList>(queryKey, (tasks = []) => update(tasks));
 
-  const settle = () => queryClient.invalidateQueries({ queryKey });
+  // Streaks change too: triggers refresh `daily_logs` on every task write.
+  const settle = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey }),
+      queryClient.invalidateQueries({ queryKey: ["streaks"] }),
+    ]);
 
   const query = useQuery({
     queryKey,

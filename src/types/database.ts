@@ -144,7 +144,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_streaks: {
+        Args: { p_today: string }
+        Returns: {
+          budget_streak: number
+          task_streak: number
+        }[]
+      }
     }
     Enums: {
       category_color: "RED" | "BLUE" | "GREEN" | "AMBER"

@@ -7,7 +7,7 @@
 ## 1. Current Project Context
 - **App Name:** Pulse (Daily Task & Expense Tracker)
 - **Target Devices:** User's iPhone (via iOS Home Screen PWA) & Laptop (Desktop Browser)
-- **Current Phase:** Phase 5 — Expense & Budget Tracker Complete (next: Phase 6, Streaks & Realtime)
+- **Current Phase:** Phase 6 — Dual Streak Engine & Realtime Sync Complete (next: Phase 7, PWA Polish & Audit)
 - **Supabase Project:** `Pulse` (ref `jlcyiuxiijticddsraje`, region `ap-south-1`, free tier). The older `Leveling` project is unrelated.
 - **Design System Reference:** `https://github.com/dickwu/apple-design-skill.git` (Apple HIG + Liquid Glass specification)
 
@@ -60,6 +60,11 @@
 - **Context:** Phase 5 needs Today / This Week / This Month totals without unbounded queries.
 - **Decision:** Weeks run **Monday–Sunday**. `useExpenses` fetches one range covering both the current week and month (`getBudgetPeriods().rangeStart…rangeEnd`, so a week that starts in the previous month still counts fully) under `["expenses", rangeStart, rangeEnd]`; the Expenses page lists this month only. Amounts are summed in integer cents (`lib/utils/money.ts`) and NUMERIC values are coerced with `Number()`. `useBudget` returns the `budgets` column defaults (20 / 140 / 600 / `$`) until the user saves; saving upserts with the session's `user_id`. Meter fill: green < 80%, amber 80–100%, red when over, and the text says "over" so color is never the only signal. Today view: shared category filter above a `grid-cols-1 lg:grid-cols-2` grid (tasks left, budget right). Settings also has Sign Out (clears the query cache).
 
+### ADR-009: Server-Maintained `daily_logs` and Streak RPC
+- **Date:** 2026-10-22
+- **Context:** `tasks.md` 6.1 asked the client to upsert today's `daily_logs` row on every change. That misses edits from other devices, edits to past days (the Expenses list allows deleting earlier expenses), and writes made while another tab is closed.
+- **Decision:** `AFTER INSERT/UPDATE/DELETE` triggers on `tasks` and `expenses` call `private.refresh_daily_log(user, date)`, which recomputes `tasks_total`, `tasks_completed` and `daily_spent` for the row's own local date (never `NOW()`). It takes a `pg_advisory_xact_lock` per (user, day) first, so concurrent writes can't leave stale counts. Everything runs as `SECURITY INVOKER`, so RLS still applies; the `private` schema keeps the helper off the Data API. The budget snapshot is set when a row is first created; `useTodayLogSnapshot` (mounted once via `DataSync`) upserts today's row on app open and whenever the Daily Budget changes, so past days keep their snapshot. Streaks come from `get_streaks(p_today)`. **Task streak** counts consecutive won days ending today, or ending yesterday while today is still in progress. **Budget streak** is 0 if today is over budget; otherwise it is `p_today − max(last over-budget day, first logged day − 1)`, so days with no row count as $0-spend days. `useRealtimeSync` subscribes to `postgres_changes` on all 4 tables, invalidates the matching query keys, and refetches everything after a reconnect.
+
 ---
 
 ## 3. Known Edge Cases & Rules
@@ -73,6 +78,7 @@
 | Date | Issue / Bug | Root Cause | Resolution |
 | :--- | :--- | :--- | :--- |
 | *YYYY-MM-DD* | *Template entry* | *Root cause description* | *Fix applied & files touched* |
+| 2026-10-22 | `daily_logs.tasks_total` stayed 1 after deleting the day's only task | Expense and task deletes ran concurrently; each trigger recomputed from a snapshot missing the other's delete, and the last upsert won with stale counts | Added a per-(user, day) `pg_advisory_xact_lock` before recomputing in `private.refresh_daily_log`; migration `serialize_daily_log_refresh` also repaired existing rows |
 | 2026-10-22 | Today page scrolled horizontally on iPhone width | Implicit grid track sized to the forms' min-content (inputs' intrinsic width) | Added `grid-cols-1` so the track is `minmax(0, 1fr)` — `src/app/(dashboard)/page.tsx` |
 
 ---
@@ -84,3 +90,4 @@
 - **2026-10-22:** Phase 3 complete — `StreakHeader`, `LiquidGlassBar`, `CategoryBadge`, `CategoryFilter`, dashboard route group with Today/Expenses/Settings placeholders. Verified at 375px and 1280px in light and dark mode.
 - **2026-10-22:** Phase 4 complete — `useTasks`, `AddTaskForm`, `TaskItem`, `TodayTasks`, `CategoryPicker`, toast system, Query provider. Verified add / toggle (persists across reload) / delete / undo / category filter against Supabase; failure rollback path not exercised.
 - **2026-10-22:** Phase 5 complete — `useBudget`, `useExpenses`, `BudgetMeters`, `AddExpenseForm`, `ExpenseItem`, `ExpenseList`, `TodayBudget`, `ExpensesView`, Settings budget form + Sign Out. Verified logging, amount validation, green→amber→red meters, delete/undo recalculation, budget save + hierarchy warning, two-column laptop layout; test rows removed.
+- **2026-10-22:** Phase 6 complete — migrations `daily_logs_sync_and_streaks`, `move_refresh_daily_log_to_private`, `serialize_daily_log_refresh`; `useStreaks`, `useTodayLogSnapshot`, `useRealtimeSync`, `DataSync`. Verified streak logic in a rolled-back SQL run (task 2→3 when today completes; budget 3 after an over-budget day), and in two browser tabs that add/complete/delete and over-budget changes appear in the other tab and update both streaks.
