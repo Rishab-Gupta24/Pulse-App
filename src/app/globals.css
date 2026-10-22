@@ -57,19 +57,22 @@ body {
   font-family: var(--font-sans);
 }
 
-/* Apply ONLY to floating navigation bars and sheets (design.md §2) */
-.liquid-glass-chrome {
-  background-color: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
-}
-
-@media (prefers-color-scheme: dark) {
+/* Apply ONLY to floating navigation bars and sheets (design.md §2).
+   Lives in the components layer so utilities (e.g. border-l-0) can override it. */
+@layer components {
   .liquid-glass-chrome {
-    background-color: rgba(28, 28, 30, 0.72);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    background-color: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .liquid-glass-chrome {
+      background-color: rgba(28, 28, 30, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
   }
 }

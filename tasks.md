@@ -30,11 +30,11 @@
 ---
 
 ## Phase 3: Minimalist App Shell & Liquid Glass Navigation
-- [ ] **3.1** Build `src/components/layout/StreakHeader.tsx` displaying today's formatted date and two solid badge counters: **🔥 Task Streak (`X` days)** and **🛡️ Budget Streak (`Y` days)** using `tabular-nums`.
-- [ ] **3.2** Build `src/components/layout/LiquidGlassBar.tsx`:
+- [x] **3.1** Build `src/components/layout/StreakHeader.tsx` displaying today's formatted date and two solid badge counters: **🔥 Task Streak (`X` days)** and **🛡️ Budget Streak (`Y` days)** using `tabular-nums`.
+- [x] **3.2** Build `src/components/layout/LiquidGlassBar.tsx`:
   - Renders a floating Liquid Glass bottom tab bar on iPhone (`<768px`) respecting `env(safe-area-inset-bottom)`.
   - Converts into a clean left sidebar on Laptop (`>=768px`).
-- [ ] **3.3** Build `src/components/shared/CategoryBadge.tsx` and `CategoryFilter.tsx` allowing the user to filter any view by `ALL`, `RED (Health)`, `BLUE (Study/Work)`, `GREEN (Food)`, or `AMBER (Personal)`.
+- [x] **3.3** Build `src/components/shared/CategoryBadge.tsx` and `CategoryFilter.tsx` allowing the user to filter any view by `ALL`, `RED (Health)`, `BLUE (Study/Work)`, `GREEN (Food)`, or `AMBER (Personal)`.
 
 ---
 

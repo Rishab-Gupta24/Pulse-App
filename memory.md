@@ -7,7 +7,7 @@
 ## 1. Current Project Context
 - **App Name:** Pulse (Daily Task & Expense Tracker)
 - **Target Devices:** User's iPhone (via iOS Home Screen PWA) & Laptop (Desktop Browser)
-- **Current Phase:** Phase 2 — Supabase, Auth & Realtime Complete (next: Phase 3, App Shell)
+- **Current Phase:** Phase 3 — App Shell & Liquid Glass Navigation Complete (next: Phase 4, Tasks)
 - **Supabase Project:** `Pulse` (ref `jlcyiuxiijticddsraje`, region `ap-south-1`, free tier). The older `Leveling` project is unrelated.
 - **Design System Reference:** `https://github.com/dickwu/apple-design-skill.git` (Apple HIG + Liquid Glass specification)
 
@@ -45,6 +45,11 @@
 - **Context:** Phase 2 setup on a fresh Supabase project.
 - **Decision:** Schema matches `Architecture.md` §4, plus `user_id DEFAULT auth.uid()` on all tables (clients can omit it on insert) and `(user_id, date)` indexes on `tasks`/`expenses`. RLS on all 4 tables with per-operation policies for `authenticated` using `(SELECT auth.uid()) = user_id`; `anon` has no table grants. All 4 tables are in the `supabase_realtime` publication. Migrations: `init_schema`, `rls_and_realtime`. `NEXT_PUBLIC_SUPABASE_ANON_KEY` holds the modern `sb_publishable_…` key. `src/middleware.ts` refreshes the session via `getClaims()` and redirects signed-out users to `/login`; `/auth/callback` exchanges the PKCE code from magic-link/confirmation emails.
 
+### ADR-006: App Shell Structure
+- **Date:** 2026-10-22
+- **Context:** Phase 3 shell and shared category UI.
+- **Decision:** `(dashboard)/layout.tsx` renders `LiquidGlassBar` (floating tab bar < 768px, 240px sidebar ≥ 768px) around a centered `max-w-[880px]` `<main>`. Each page renders its own `StreakHeader title=…` (date + streak pills; pills hidden on laptop because the sidebar shows them). Streak counts come from `useStreaks()` — a stub returning 0 until Phase 6. The date renders client-only via `useSyncExternalStore` so the server's timezone never shows. `.liquid-glass-chrome` sits in `@layer components` so utilities can override it. Category filter state is a Zustand store (`useCategoryFilter`); the selected pill gets an inset ring in its category color because the 12% tint is nearly invisible on dark surfaces. Categories gained `shortLabel` for pills/badges.
+
 ---
 
 ## 3. Known Edge Cases & Rules
@@ -65,3 +70,4 @@
 - **2026-10-22:** Initialized `PRD.md`, `Architecture.md`, `Rules.md`, `memory.md`, `design.md`, and `tasks.md`.
 - **2026-10-22:** Phase 1 complete — Next.js scaffold, git repo + `.design-rules` submodule, approved deps, `globals.css` tokens + `.liquid-glass-chrome`, `src/lib/constants/categories.ts`.
 - **2026-10-22:** Phase 2 complete — Supabase project `Pulse`, schema + RLS + Realtime, generated `src/types/database.ts`, Supabase browser/server/middleware clients, `/login` page and `/auth/callback` route.
+- **2026-10-22:** Phase 3 complete — `StreakHeader`, `LiquidGlassBar`, `CategoryBadge`, `CategoryFilter`, dashboard route group with Today/Expenses/Settings placeholders. Verified at 375px and 1280px in light and dark mode.
