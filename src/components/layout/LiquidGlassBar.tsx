@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarCheck, Settings, Wallet, type LucideIcon } from "lucide-react";
+import { CalendarCheck, CalendarDays, Settings, Wallet, type LucideIcon } from "lucide-react";
 import { StreakBadges } from "./StreakHeader";
 import { cn } from "@/lib/utils/cn";
 
@@ -14,6 +14,7 @@ interface NavItem {
 
 const NAV_ITEMS: readonly NavItem[] = [
   { href: "/", label: "Today", icon: CalendarCheck },
+  { href: "/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/expenses", label: "Expenses", icon: Wallet },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
@@ -37,7 +38,7 @@ export default function LiquidGlassBar() {
         aria-label="Primary"
         className="liquid-glass-chrome fixed inset-x-4 bottom-[calc(16px+env(safe-area-inset-bottom))] z-40 mx-auto max-w-sm rounded-full p-1.5 md:hidden"
       >
-        <ul className="grid grid-cols-3">
+        <ul className="grid grid-cols-4">
           {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
             const active = isActive(pathname, href);
             return (

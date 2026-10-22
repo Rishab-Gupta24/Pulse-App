@@ -4,14 +4,15 @@ import { useEffect } from "react";
 import { useQueryClient, type QueryKey } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 
-type SyncedTable = "tasks" | "expenses" | "budgets" | "daily_logs";
+type SyncedTable = "tasks" | "expenses" | "budgets" | "daily_logs" | "task_templates";
 
 // Query-key prefixes to refetch when a table changes on any device.
 const INVALIDATIONS: Record<SyncedTable, QueryKey[]> = {
-  tasks: [["tasks"], ["streaks"]],
-  expenses: [["expenses"], ["streaks"]],
+  tasks: [["tasks"], ["streaks"], ["daily-logs"]],
+  expenses: [["expenses"], ["streaks"], ["daily-logs"]],
   budgets: [["budget"]],
-  daily_logs: [["streaks"]],
+  daily_logs: [["streaks"], ["daily-logs"]],
+  task_templates: [["templates"]],
 };
 
 /**

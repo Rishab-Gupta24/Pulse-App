@@ -5,21 +5,30 @@ import CategoryPicker from "@/components/shared/CategoryPicker";
 import type { CategoryColor } from "@/lib/constants/categories";
 import { EXPENSE_TITLE_MAX_LENGTH, normalizeExpenseTitle } from "@/hooks/useExpenses";
 import { parseAmount } from "@/lib/utils/money";
+import { cn } from "@/lib/utils/cn";
+import type { ExpenseScope } from "@/types/database";
 
 const inputClass =
   "h-11 min-w-0 rounded-xl bg-subtle px-4 text-[17px] text-primary outline-none placeholder:text-secondary md:text-[15px]";
 
-/** Quick expense entry: amount + label + category + "Log Expense". */
+export const SCOPE_OPTIONS: { value: ExpenseScope; label: string; hint: string }[] = [
+  { value: "DAY", label: "Today", hint: "Counts toward today, this week and this month." },
+  { value: "WEEK", label: "This Week", hint: "Lasts the week: counts toward this week and month, not today." },
+  { value: "MONTH", label: "This Month", hint: "Lasts the month (e.g. detergent): counts toward this month only." },
+];
+
+/** Quick expense entry: amount + label + category + budget scope + "Log Expense". */
 export default function AddExpenseForm({
   currencySymbol,
   onAdd,
 }: {
   currencySymbol: string;
-  onAdd: (title: string, amount: number, category: CategoryColor) => boolean;
+  onAdd: (title: string, amount: number, category: CategoryColor, scope: ExpenseScope) => boolean;
 }) {
   const [amountInput, setAmountInput] = useState("");
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<CategoryColor>("GREEN");
+  const [scope, setScope] = useState<ExpenseScope>("DAY");
   const [error, setError] = useState("");
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -33,9 +42,10 @@ export default function AddExpenseForm({
       setError("Add a short label for this expense.");
       return;
     }
-    if (onAdd(title, amount, category)) {
+    if (onAdd(title, amount, category, scope)) {
       setAmountInput("");
       setTitle("");
+      setScope("DAY");
       setError("");
     }
   }
@@ -74,6 +84,35 @@ export default function AddExpenseForm({
         </label>
       </div>
       <CategoryPicker value={category} onChange={setCategory} />
+      <div className="flex flex-col gap-1.5">
+        <span id="expense-scope-label" className="text-xs font-medium text-secondary">
+          Counts toward
+        </span>
+        <div
+          role="radiogroup"
+          aria-labelledby="expense-scope-label"
+          className="grid grid-cols-3 gap-1 rounded-xl bg-subtle p-1"
+        >
+          {SCOPE_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={scope === option.value}
+              onClick={() => setScope(option.value)}
+              className={cn(
+                "min-h-11 rounded-lg text-[13px] font-semibold",
+                scope === option.value ? "bg-surface text-primary" : "text-secondary",
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-secondary">
+          {SCOPE_OPTIONS.find((option) => option.value === scope)?.hint}
+        </p>
+      </div>
       <button
         type="submit"
         className="h-11 rounded-xl bg-accent-fill text-[15px] font-semibold text-white"

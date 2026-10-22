@@ -76,3 +76,17 @@
   - Verify Liquid Glass is applied only to the floating navigation bar/modals and never on content rows.
   - Verify all touch targets on iPhone are `>= 44x44px` and text contrast passes WCAG AA (`4.5:1`).
 - [ ] **7.3** Deploy to Vercel and test live bidirectional sync between iPhone and Laptop.
+  - Deployed to https://pulse-pi-teal.vercel.app (Vercel project `plus-84e9/pulse`, deployed with the CLI). Still to do: set the Supabase Auth Site URL / Redirect URLs, connect GitHub for automatic deploys, and run the iPhone ↔ Laptop sync test.
+
+---
+
+## Phase 8: Planning, Repeats & Motion
+- [x] **8.1** Migration `repeats_notes_scopes_streak_stats`: `tasks.note`, `task_templates` + `template_materializations` (RLS, Realtime), `expenses.scope`, `materialize_tasks` / `create_repeating_task` / `make_task_repeating` RPCs, day-scope-only `daily_spent`, extended `get_streaks` (longest + total).
+- [x] **8.2** Edit mode on the Today list: view mode only ticks tasks off; edit mode adds / deletes / repeats with completion locked.
+- [x] **8.3** Task notes ("bio", e.g. "1 hr workout") in the add form and on rows.
+- [x] **8.4** Repeating tasks on chosen weekdays (Every Day / Weekdays / Weekends presets), per-task Repeat / Stop Repeating, and "Repeat Today's Tasks…" bulk copy. Unfinished tasks are not carried over.
+- [x] **8.5** Expense "Counts toward" Today / This Week / This Month, respected by meters and the Budget streak.
+- [x] **8.6** Streak Line card (current, longest, 7-day line, total) with a live flickering blue flame; Tasks / Budget toggle.
+- [x] **8.7** Calendar tab: month grid (done / unfinished / planned counts incl. repeats) and day detail with adding tasks to future days.
+- [x] **8.8** All-done celebration (view mode only), respects reduced motion.
+- [x] **8.9** Re-deploy to Vercel (`npx vercel deploy --prod --scope plus-84e9`) after committing.

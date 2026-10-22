@@ -99,9 +99,31 @@ Following Apple's Liquid Glass rules from `dickwu/apple-design-skill`:
 - **iPhone Layout (< 768px):**
   - Single-column vertical scroll (`max-width: 100%`, horizontal padding `16px`).
   - Top bar shows Today's Date + **🔥 Task Streak** and **🛡️ Budget Streak** pills.
-  - Bottom floating **Liquid Glass Tab Bar** with 3 tabs: **Today**, **Expenses**, **Settings**.
+  - Bottom floating **Liquid Glass Tab Bar** with 4 tabs: **Today**, **Calendar**, **Expenses**, **Settings**.
 - **Laptop Layout (≥ 768px):**
   - Left **Liquid Glass Sidebar** (`240px` wide) containing navigation + live Streak counters.
   - Main workspace centered (`max-width: 880px`) using a clean 2-column grid on the "Today" view (Left Column: Daily Tasks; Right Column: Day/Week/Month Budget Meters + Daily Expenses).
 - **Copywriting Rules (`writing.md`):**
-  - Every button states the exact action in Title Case: `"Add Task"`, `"Log Expense"`, `"Save Budgets"` (never `"Submit"` or `"OK"`).
+  - Every button states the exact action in Title Case: `"Add Task"`, `"Log Expense"`, `"Save Budgets"`, `"Done Editing"`, `"Save Repeat"`, `"Stop Repeating"` (never `"Submit"` or `"OK"`).
+
+---
+
+## 6. Streak Line, Live Flame & Celebration (`motion.md`)
+
+* **Streak Line card (Today, top):** solid `--bg-surface` card with a "STREAKS" header and a Tasks / Budget segmented toggle. Below it, **Current streak** and **Longest streak** (with trophy icon) as 34px bold `tabular-nums` figures, then a 7-day row (4 days back, today, 2 ahead), then "Total task/budget days: N".
+  * Day circle states (40px): **won** = solid `--accent-fill` with a white live flame (Tasks) or shield (Budget); **today, not yet won** = 2px dashed `--accent` ring plus a small `--accent` triangle marker above; **missed** = 1.5px `--border-hairline` ring; **future** = solid `--bg-subtle`.
+* **Live blue flame (`BlueFlame`):** two flat SVG shapes. The outer flame uses `currentColor`; the inner core uses `--flame-core` (`#9CC8FF`). The outer flame flickers (`scaleY` + `skewX`, 1.25s) and the core pulses out of phase (0.9s), both anchored at the base. No gradients, blur or glow.
+* **All-done celebration:** shown only when the last task is ticked in view mode. A dimmed backdrop and a solid `--bg-surface` card (no glass) pop in, with three flat `--accent` rings bursting outward (staggered 180ms), an `--accent-fill` disc with a large live flame, "All Tasks Done" and the new streak. It closes itself after 2.6s, or on tap.
+* **Reduced motion:** under `prefers-reduced-motion: reduce`, the flame is static, the rings are hidden, and the card appears instantly.
+
+## 7. Calendar (`calendar`)
+
+* Solid card with a month header (chevron buttons, "Today" shortcut when off-month) and a Monday-first 7-column grid of 44×48px day cells.
+* Cell indicators: past/today **all done** → small blue flame; **unfinished** → small hollow ring; **future** → count of planned tasks (repeats included). Selected day = `--accent-fill` with white text; today = 2px inset `--accent` ring; days outside the month at 40% opacity.
+* Day detail beside the grid on laptop (below it on iPhone): a relative label (Today / Tomorrow / Upcoming / Past day), the full date, and the task list. Future days add an "Add to <date>" form.
+
+## 8. Edit Mode & Expense Scope
+
+* **Edit / Done Editing** toggle in the Tasks header: an `--accent` text pill in view mode, a filled `--accent-fill` pill in edit mode. In edit mode, checkboxes are shown at 40% opacity (locked), and each row gets Repeat and Delete icon buttons (44px).
+* **WeekdayPicker:** seven 44px round chips (M T W T F S S, filled `--accent-fill` when selected) plus Every Day / Weekdays / Weekends presets. Repeating rows show a small repeat icon and "Weekdays" / "Mon, Wed" text next to the category.
+* **Expense "Counts toward":** a 3-segment control (Today / This Week / This Month) on a `--bg-subtle` track, with a one-line hint underneath. Non-daily expenses show a "Weekly" / "Monthly" chip in the list.

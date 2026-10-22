@@ -12,6 +12,11 @@
 5. **Tabular Numbers for All Metrics:** All currency amounts, budget remaining balances, percentages, and streak counters MUST apply `font-variant-numeric: tabular-nums` (`tabular-nums` in Tailwind) so digits align vertically and never jitter when updated.
 6. **Liquid Glass Isolation:** Apply translucent blur (`backdrop-filter`) ONLY on the floating navigation chrome (Bottom Tab Bar on iPhone, Sidebar/Header on Laptop) and modal overlays. Content cards and list rows MUST remain solid opaque surfaces.
 7. **Strict TypeScript:** `strict: true` must remain enabled. No `any` types (`@typescript-eslint/no-explicit-any` is an error).
+8. **View Mode vs. Edit Mode:** Task lists never mix the two. In view mode only completion changes; add / delete / repeat controls appear only in edit mode, where the checkbox is locked (`aria-disabled`).
+9. **Repeats Go Through the RPCs:** Create and change repeating tasks only via `create_repeating_task`, `make_task_repeating` and `materialize_tasks`. Never insert template copies directly, or a copy the user deleted can come back.
+10. **Expense Scope Is Respected Everywhere:** Totals and streaks MUST follow `scope`: today = `DAY` only, week = `DAY` + `WEEK`, month = all.
+11. **Motion Is CSS-Only and Optional:** Animations (live flame, all-done celebration) use CSS keyframes in `globals.css`, use flat shapes only (no gradients or glows), are brief and dismissible, and are turned off under `prefers-reduced-motion`.
+12. **No Secrets in Git:** Real values live only in `.env.local` and Vercel's Environment Variables. The pre-commit hook and CI run `scripts/check-secrets.mjs`. Never bypass them with `--no-verify`.
 
 ---
 

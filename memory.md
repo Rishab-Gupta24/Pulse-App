@@ -7,8 +7,10 @@
 ## 1. Current Project Context
 - **App Name:** Pulse (Daily Task & Expense Tracker)
 - **Target Devices:** User's iPhone (via iOS Home Screen PWA) & Laptop (Desktop Browser)
-- **Current Phase:** Phase 7 — PWA polish (7.1) and HIG audit (7.2) complete; 7.3 (Vercel deploy + iPhone test) pending user go-ahead
+- **Current Phase:** Phase 8 (planning, repeats, motion) built and verified locally; not yet re-deployed. 7.3 iPhone sync test still pending.
 - **Supabase Project:** `Pulse` (ref `jlcyiuxiijticddsraje`, region `ap-south-1`, free tier). The older `Leveling` project is unrelated.
+- **Hosting:** Vercel project `plus-84e9/pulse`, live at https://pulse-pi-teal.vercel.app. Deployed with the Vercel CLI (`npx vercel deploy --prod --scope plus-84e9`); GitHub auto-deploy is not connected yet. The Vercel MCP connector cannot access team `plus-84e9` (403 even after approval), so use the CLI.
+- **Repo:** https://github.com/Rishab-Gupta24/Pulse-App (`main`).
 - **Design System Reference:** `https://github.com/dickwu/apple-design-skill.git` (Apple HIG + Liquid Glass specification)
 
 ---
@@ -75,11 +77,30 @@
 - **Context:** The GitHub repo is public (needed for the Vercel import).
 - **Decision:** Real values live only in `.env.local` (git-ignored) and Vercel env vars; `.env.example` stays blank. `NEXT_PUBLIC_SUPABASE_*` values are public by design (shipped to every browser); data safety rests on RLS (all 4 tables, `anon` has no grants). Never commit a Supabase `sb_secret_…`/service-role key. `scripts/check-secrets.mjs` blocks env files and key patterns: as a pre-commit hook (`.githooks/`, enabled by `npm install` via `prepare`) and in CI (`.github/workflows/secret-check.yml`). Full-history scan on this date found no secrets.
 
+### ADR-012: Repeating Tasks via Templates + Materialization
+- **Date:** 2026-10-22
+- **Context:** The user asked whether tasks carry over (they don't) and wanted tasks copied to chosen weekdays.
+- **Decision:** No carry-over. `task_templates` hold title / note / category / `weekdays` (0 = Sun…6 = Sat). `materialize_tasks(today)` runs in the Today query and creates each due template's copy exactly once, by claiming `(template_id, date)` in `template_materializations` (`ON CONFLICT DO NOTHING`). Deleting a copy therefore doesn't bring it back, and two devices can't create duplicates. Future days are **projected** from templates in the calendar, not stored. New repeating tasks use `create_repeating_task` with client-generated ids (optimistic UI); existing tasks use `make_task_repeating`; stopping sets `active = false`. Verified in a rolled-back SQL run and in the browser.
+
+### ADR-013: Edit Mode, Expense Scope, Streak Line & Motion
+- **Date:** 2026-10-22
+- **Decision:**
+  - **Edit mode:** the Today list has view mode (tick only) and edit mode (add / delete / repeat; checkbox locked). The celebration fires only when a view-mode tick completes the day, and is triggered from the toggle handler rather than an effect, so it never fires on load.
+  - **Expense scope:** `expenses.scope` ∈ DAY / WEEK / MONTH. `refresh_daily_log` sums only `DAY` into `daily_spent`, so monthly purchases don't break the Budget streak.
+  - **Streak stats:** `get_streaks` now also returns longest and total days. The longest budget streak is computed from the gaps between "break" days (first log − 1, over-budget days, today + 1).
+  - **Streak line and calendar:** they read `daily_logs` for a bounded range (`["daily-logs", start, end]`) and render only in the browser (`useSyncExternalStore`), because day labels depend on the device clock.
+  - **Motion:** the live flame and the celebration are CSS keyframes on flat shapes, with a `--flame-core` token so no hex values sit in JSX, and both are turned off under reduced motion.
+  - **Navigation:** the tab bar has 4 tabs (Today, Calendar, Expenses, Settings).
+
 ---
 
 ## 3. Known Edge Cases & Rules
 - **Zero-Task Day Rule:** A day with `0` tasks scheduled does **not** increment the Task Streak; at least `1` task must be created and completed on that calendar day to count as a won day.
 - **Zero-Spend Day Rule:** A day with `$0` spent is automatically `<= Daily Budget`, so it **does** increment the Budget Streak at the end of the day (or counts toward the active streak).
+- **No Carry-Over:** Unfinished tasks stay on their own day; only repeating tasks appear on new days.
+- **Deleted Repeat Copy:** Deleting today's copy of a repeating task removes it for that day only; it is not re-created on reload (the materialization row remains). Undo restores it.
+- **Repeat Created Mid-Week:** A new repeating task gets a copy today only if today is one of its weekdays; past days are never backfilled.
+- **Scoped Expenses:** WEEK / MONTH expenses never affect the daily meter or the Budget streak.
 - **Budget Hierarchy Warning:** In Settings, warn the user if `Daily Budget * 7 > Weekly Budget` or `Weekly Budget * 4 > Monthly Budget`, while still allowing custom overrides.
 
 ---
@@ -102,4 +123,6 @@
 - **2026-10-22:** Phase 5 complete — `useBudget`, `useExpenses`, `BudgetMeters`, `AddExpenseForm`, `ExpenseItem`, `ExpenseList`, `TodayBudget`, `ExpensesView`, Settings budget form + Sign Out. Verified logging, amount validation, green→amber→red meters, delete/undo recalculation, budget save + hierarchy warning, two-column laptop layout; test rows removed.
 - **2026-10-22:** Phase 6 complete — migrations `daily_logs_sync_and_streaks`, `move_refresh_daily_log_to_private`, `serialize_daily_log_refresh`; `useStreaks`, `useTodayLogSnapshot`, `useRealtimeSync`, `DataSync`. Verified streak logic in a rolled-back SQL run (task 2→3 when today completes; budget 3 after an over-budget day), and in two browser tabs that add/complete/delete and over-budget changes appear in the other tab and update both streaks.
 - **2026-10-22:** Exported the 5 applied migrations to `supabase/migrations/` (MD5-verified against `supabase_migrations.schema_migrations`).
+- **2026-10-22:** Deployed to Vercel with the CLI (https://pulse-pi-teal.vercel.app); added `.vercelignore`, secret guard (ADR-011).
+- **2026-10-22:** Phase 8 — edit mode, task notes, repeating tasks, expense scope, streak line with live flame, calendar tab, all-done celebration; migration `20261022190238_repeats_notes_scopes_streak_stats`. Verified at 375px (dark) and 1366px (light); test data removed and the user's "GYM" task restored to not done.
 - **2026-10-22:** Phase 7.1–7.2 complete — manifest, icons, iOS meta tags, safe-area padding; HIG audit: no gradients, glass only on the 2 nav surfaces (never stacked), all 45 visible controls ≥ 44×44 px at 375 px, all text pairs ≥ 4.5:1 after the token fix. Production build verified; manifest + icons return 200 without a session.

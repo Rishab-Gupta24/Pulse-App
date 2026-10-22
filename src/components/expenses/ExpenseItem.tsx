@@ -21,7 +21,14 @@ export default function ExpenseItem({
         <span className="break-words text-[17px] leading-[1.4] md:text-[15px]">
           {expense.title}
         </span>
-        <CategoryBadge category={expense.category} />
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
+          <CategoryBadge category={expense.category} />
+          {expense.scope !== "DAY" && (
+            <span className="rounded-full bg-subtle px-2 py-0.5 text-xs font-medium text-secondary">
+              {expense.scope === "MONTH" ? "Monthly" : "Weekly"}
+            </span>
+          )}
+        </div>
       </div>
       <span className="shrink-0 text-[17px] font-semibold tabular-nums md:text-[15px]">
         {formatMoney(expense.amount, currencySymbol)}

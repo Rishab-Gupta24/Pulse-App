@@ -32,6 +32,38 @@ export function formatDayHeading(localDate: string): string {
   return formatDisplayDate(date);
 }
 
+/** Parses a local `YYYY-MM-DD` string as a local-midnight Date. */
+export function fromLocalDateString(localDate: string): Date {
+  return parse(localDate, "yyyy-MM-dd", new Date());
+}
+
+/** Day of week as stored in `task_templates.weekdays` (0 = Sunday, like getDay()). */
+export type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+
+/** Monday-first, matching the Monday–Sunday budget week. */
+export const WEEKDAYS: readonly { value: Weekday; short: string; label: string }[] = [
+  { value: 1, short: "M", label: "Monday" },
+  { value: 2, short: "T", label: "Tuesday" },
+  { value: 3, short: "W", label: "Wednesday" },
+  { value: 4, short: "T", label: "Thursday" },
+  { value: 5, short: "F", label: "Friday" },
+  { value: 6, short: "S", label: "Saturday" },
+  { value: 0, short: "S", label: "Sunday" },
+];
+
+const sameDays = (days: readonly number[], expected: number[]) =>
+  days.length === expected.length && expected.every((d) => days.includes(d));
+
+/** "Every day", "Weekdays", "Weekends" or e.g. "Mon, Wed, Fri". */
+export function formatWeekdays(days: readonly number[]): string {
+  if (sameDays(days, [0, 1, 2, 3, 4, 5, 6])) return "Every day";
+  if (sameDays(days, [1, 2, 3, 4, 5])) return "Weekdays";
+  if (sameDays(days, [0, 6])) return "Weekends";
+  return WEEKDAYS.filter((d) => days.includes(d.value))
+    .map((d) => d.label.slice(0, 3))
+    .join(", ");
+}
+
 export interface BudgetPeriods {
   today: string;
   weekStart: string;

@@ -16,6 +16,8 @@
   --accent: #0040dd;
   --accent-fill: #0060df; /* white text 5.6:1 in both modes */
   --danger: #d70015;
+  /* Inner flame on an --accent-fill circle (decorative). */
+  --flame-core: #9cc8ff;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -104,5 +106,69 @@ body {
     .liquid-glass-chrome {
       border-color: var(--border-hairline);
     }
+  }
+}
+
+/* Live blue flame (streak line, celebration). Two flat shapes flicker out of
+   phase; no gradients or glow (Rules.md §2.1). */
+@keyframes flame-flicker {
+  0%, 100% { transform: scaleY(1) skewX(0deg); }
+  25% { transform: scaleY(1.07) skewX(-3deg); }
+  50% { transform: scaleY(0.94) skewX(2deg); }
+  75% { transform: scaleY(1.04) skewX(-1deg); }
+}
+
+@keyframes flame-core {
+  0%, 100% { transform: scale(1) translateY(0); }
+  50% { transform: scale(0.82) translateY(4%); }
+}
+
+.flame-live .flame-outer,
+.flame-live .flame-core {
+  transform-box: fill-box;
+  transform-origin: 50% 95%;
+}
+
+.flame-live .flame-outer {
+  animation: flame-flicker 1.25s ease-in-out infinite;
+}
+
+.flame-live .flame-core {
+  animation: flame-core 0.9s ease-in-out infinite;
+}
+
+/* All-tasks-done celebration */
+@keyframes ring-burst {
+  from { transform: scale(0.4); opacity: 0.9; }
+  to { transform: scale(2.4); opacity: 0; }
+}
+
+@keyframes pop-in {
+  0% { transform: scale(0.85); opacity: 0; }
+  60% { transform: scale(1.04); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-ring-burst {
+  animation: ring-burst 1.1s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+.animate-pop-in {
+  animation: pop-in 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flame-live .flame-outer,
+  .flame-live .flame-core,
+  .animate-ring-burst {
+    animation: none;
+  }
+
+  .animate-ring-burst {
+    opacity: 0;
+  }
+
+  .animate-pop-in {
+    animation-duration: 0.01s;
   }
 }

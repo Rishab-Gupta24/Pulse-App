@@ -7,7 +7,7 @@ import { getBudgetPeriods } from "@/lib/utils/dates";
 import { sumAmounts } from "@/lib/utils/money";
 import { useBudget } from "@/hooks/useBudget";
 import { showToast } from "@/hooks/useToast";
-import type { Expense } from "@/types/database";
+import type { Expense, ExpenseScope } from "@/types/database";
 
 export const EXPENSE_TITLE_MAX_LENGTH = 100;
 
@@ -52,6 +52,7 @@ export function useExpenses() {
     Promise.all([
       queryClient.invalidateQueries({ queryKey }),
       queryClient.invalidateQueries({ queryKey: ["streaks"] }),
+      queryClient.invalidateQueries({ queryKey: ["daily-logs"] }),
     ]);
 
   const query = useQuery({
@@ -76,6 +77,7 @@ export function useExpenses() {
       amount: expense.amount,
       category: expense.category,
       expense_date: expense.expense_date,
+      scope: expense.scope,
     });
     if (error) throw error;
   };
@@ -132,10 +134,15 @@ export function useExpenses() {
   const amountsWhere = (keep: (expense: Expense) => boolean) =>
     sumAmounts(expenses.filter(keep).map((e) => e.amount));
 
+  // Scope decides which budgets an expense counts toward: a MONTH purchase (e.g.
+  // detergent) only hits the month, WEEK hits week + month, DAY hits all three.
   const totals: SpendTotals = {
-    today: amountsWhere((e) => e.expense_date === periods.today),
+    today: amountsWhere((e) => e.scope === "DAY" && e.expense_date === periods.today),
     week: amountsWhere(
-      (e) => e.expense_date >= periods.weekStart && e.expense_date <= periods.weekEnd,
+      (e) =>
+        e.scope !== "MONTH" &&
+        e.expense_date >= periods.weekStart &&
+        e.expense_date <= periods.weekEnd,
     ),
     month: amountsWhere(
       (e) => e.expense_date >= periods.monthStart && e.expense_date <= periods.monthEnd,
@@ -150,7 +157,12 @@ export function useExpenses() {
     isLoading: query.isPending || budgetLoading,
     isError: query.isError,
     /** Returns false when the input is invalid (nothing is sent). */
-    addExpense: (title: string, amount: number, category: CategoryColor): boolean => {
+    addExpense: (
+      title: string,
+      amount: number,
+      category: CategoryColor,
+      scope: ExpenseScope = "DAY",
+    ): boolean => {
       const normalized = normalizeExpenseTitle(title);
       if (!normalized || !(amount > 0) || !isCategoryColor(category)) return false;
       addExpense.mutate({
@@ -159,6 +171,7 @@ export function useExpenses() {
         title: normalized,
         amount,
         category,
+        scope,
         expense_date: periods.today,
         created_at: new Date().toISOString(),
       });

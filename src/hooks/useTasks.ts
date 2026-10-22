@@ -3,11 +3,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { isCategoryColor, type CategoryColor } from "@/lib/constants/categories";
-import { toLocalDateString } from "@/lib/utils/dates";
+import { fromLocalDateString, toLocalDateString, type Weekday } from "@/lib/utils/dates";
 import { showToast } from "@/hooks/useToast";
+import { templatesQueryKey } from "@/hooks/useTaskTemplates";
 import type { Task } from "@/types/database";
 
 export const TASK_TITLE_MAX_LENGTH = 140;
+export const TASK_NOTE_MAX_LENGTH = 200;
 
 export const tasksQueryKey = (date: string) => ["tasks", date] as const;
 
@@ -23,15 +25,31 @@ export function normalizeTaskTitle(title: string): string | null {
   return trimmed;
 }
 
+/** Trimmed note, or null when empty. Over-long notes are rejected (undefined). */
+export function normalizeTaskNote(note: string): string | null | undefined {
+  const trimmed = note.trim();
+  if (!trimmed) return null;
+  return trimmed.length > TASK_NOTE_MAX_LENGTH ? undefined : trimmed;
+}
+
+export interface NewTask {
+  title: string;
+  note: string;
+  category: CategoryColor;
+  /** Empty = one-off task for this date. */
+  weekdays: Weekday[];
+}
+
 /**
- * Today's tasks (local calendar day) with optimistic add / toggle / delete.
+ * Tasks for one local calendar day (default: today) with optimistic add / toggle /
+ * delete. Loading today also creates today's instances of repeating tasks.
  * Failed mutations roll back only the affected row and show a toast.
  */
-export function useTasks() {
+export function useTasks(date: string = toLocalDateString()) {
   const supabase = createClient();
   const queryClient = useQueryClient();
-  const date = toLocalDateString();
   const queryKey = tasksQueryKey(date);
+  const isToday = date === toLocalDateString();
 
   const setTasks = (update: (tasks: TaskList) => TaskList) =>
     queryClient.setQueryData<TaskList>(queryKey, (tasks = []) => update(tasks));
@@ -39,13 +57,18 @@ export function useTasks() {
   // Streaks change too: triggers refresh `daily_logs` on every task write.
   const settle = () =>
     Promise.all([
-      queryClient.invalidateQueries({ queryKey }),
+      queryClient.invalidateQueries({ queryKey: ["tasks"] }),
       queryClient.invalidateQueries({ queryKey: ["streaks"] }),
+      queryClient.invalidateQueries({ queryKey: ["daily-logs"] }),
     ]);
 
   const query = useQuery({
     queryKey,
     queryFn: async (): Promise<TaskList> => {
+      if (isToday) {
+        // Idempotent; a failure here should not hide the tasks that already exist.
+        await supabase.rpc("materialize_tasks", { p_date: date });
+      }
       const { data, error } = await supabase
         .from("tasks")
         .select("*")
@@ -61,20 +84,43 @@ export function useTasks() {
     const { error } = await supabase.from("tasks").insert({
       id: task.id,
       title: task.title,
+      note: task.note,
       category: task.category,
       is_completed: task.is_completed,
       task_date: task.task_date,
+      template_id: task.template_id,
     });
     if (error) throw error;
   };
 
   const addTask = useMutation({
-    mutationFn: insertTask,
-    onMutate: async (task) => {
-      await queryClient.cancelQueries({ queryKey });
-      setTasks((tasks) => [...tasks, task]);
+    mutationFn: async ({ task, weekdays }: { task: Task; weekdays: Weekday[] }) => {
+      if (weekdays.length === 0) return insertTask(task);
+      const { error } = await supabase.rpc("create_repeating_task", {
+        p_template_id: task.template_id ?? crypto.randomUUID(),
+        p_task_id: task.id,
+        p_title: task.title,
+        p_note: task.note,
+        p_category: task.category,
+        p_weekdays: weekdays,
+        p_today: date,
+      });
+      if (error) throw error;
     },
-    onError: (_error, task) => {
+    onMutate: async ({ task, weekdays }) => {
+      await queryClient.cancelQueries({ queryKey });
+      // A repeating task only gets an instance today if today is one of its days.
+      const dayOfWeek = fromLocalDateString(date).getDay() as Weekday;
+      if (weekdays.length === 0 || weekdays.includes(dayOfWeek)) {
+        setTasks((tasks) => [...tasks, task]);
+      }
+    },
+    onSuccess: (_data, { weekdays }) => {
+      if (weekdays.length > 0) {
+        void queryClient.invalidateQueries({ queryKey: templatesQueryKey });
+      }
+    },
+    onError: (_error, { task }) => {
       setTasks((tasks) => tasks.filter((t) => t.id !== task.id));
       showToast("Couldn't add task. Try again.");
     },
@@ -127,7 +173,7 @@ export function useTasks() {
       setTasks((tasks) => tasks.filter((t) => t.id !== task.id));
     },
     onSuccess: (_data, task) => {
-      showToast("Task deleted.", {
+      showToast(task.template_id ? "Removed for this day." : "Task deleted.", {
         label: "Undo",
         onClick: () => restoreTask.mutate(task),
       });
@@ -139,27 +185,65 @@ export function useTasks() {
     onSettled: settle,
   });
 
+  /** Makes a task repeat on `weekdays`, or changes the days of an existing repeat. */
+  const setRepeat = useMutation({
+    mutationFn: async ({ task, weekdays, templateId }: { task: Task; weekdays: Weekday[]; templateId: string }) => {
+      const { error } = await supabase.rpc("make_task_repeating", {
+        p_task_id: task.id,
+        p_template_id: templateId,
+        p_weekdays: weekdays,
+      });
+      if (error) throw error;
+    },
+    onMutate: async ({ task, templateId }) => {
+      await queryClient.cancelQueries({ queryKey });
+      setTasks((tasks) =>
+        tasks.map((t) => (t.id === task.id ? { ...t, template_id: t.template_id ?? templateId } : t)),
+      );
+    },
+    onError: (_error, { task }) => {
+      setTasks((tasks) =>
+        tasks.map((t) => (t.id === task.id ? { ...t, template_id: task.template_id } : t)),
+      );
+      showToast("Couldn't update repeat. Try again.");
+    },
+    onSettled: () =>
+      Promise.all([settle(), queryClient.invalidateQueries({ queryKey: templatesQueryKey })]),
+  });
+
   return {
+    date,
+    isToday,
     tasks: query.data ?? [],
     isLoading: query.isPending,
     isError: query.isError,
     /** Returns false when the input is invalid (nothing is sent). */
-    addTask: (title: string, category: CategoryColor): boolean => {
-      const normalized = normalizeTaskTitle(title);
-      if (!normalized || !isCategoryColor(category)) return false;
+    addTask: ({ title, note, category, weekdays }: NewTask): boolean => {
+      const normalizedTitle = normalizeTaskTitle(title);
+      const normalizedNote = normalizeTaskNote(note);
+      if (!normalizedTitle || normalizedNote === undefined || !isCategoryColor(category)) {
+        return false;
+      }
       addTask.mutate({
-        id: crypto.randomUUID(),
-        user_id: "", // Filled by the DB default (auth.uid()); not used in the UI.
-        title: normalized,
-        category,
-        is_completed: false,
-        task_date: date,
-        created_at: new Date().toISOString(),
+        task: {
+          id: crypto.randomUUID(),
+          user_id: "", // Filled by the DB default (auth.uid()); not used in the UI.
+          title: normalizedTitle,
+          note: normalizedNote,
+          category,
+          is_completed: false,
+          task_date: date,
+          template_id: weekdays.length > 0 ? crypto.randomUUID() : null,
+          created_at: new Date().toISOString(),
+        },
+        weekdays,
       });
       return true;
     },
     toggleTask: (task: Task) =>
       toggleTask.mutate({ id: task.id, isCompleted: !task.is_completed }),
     deleteTask: (task: Task) => deleteTask.mutate(task),
+    setRepeat: (task: Task, weekdays: Weekday[]) =>
+      setRepeat.mutate({ task, weekdays, templateId: task.template_id ?? crypto.randomUUID() }),
   };
 }

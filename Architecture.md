@@ -40,60 +40,52 @@ Pulse uses a **Next.js (App Router) Progressive Web App (PWA)** frontend paired 
 ---
 
 ## 3. Project Directory & Folder Structure
+The app lives in the repo root (see `memory.md` ADR-004).
 ```text
-pulse-app/
-├── .design-rules/                  # Cloned dickwu/apple-design-skill submodule
-├── public/
-│   ├── icons/                      # Apple touch icons (180x180) & PWA icons
-│   └── manifest.json               # PWA configuration for iPhone Home Screen
+/
+├── .design-rules/                  # dickwu/apple-design-skill submodule (HIG audits)
+├── .githooks/pre-commit            # Runs scripts/check-secrets.mjs before every commit
+├── .github/workflows/              # secret-check.yml (CI re-run of the secret scan)
+├── scripts/check-secrets.mjs       # Blocks env files / keys from being committed
+├── supabase/migrations/            # Every applied migration, named by recorded version
 ├── src/
 │   ├── app/
-│   │   ├── (auth)/
-│   │   │   └── login/page.tsx      # Minimal authentication screen
+│   │   ├── (auth)/login/page.tsx   # Email/password + magic link sign-in
+│   │   ├── auth/callback/route.ts  # PKCE code exchange for email links
 │   │   ├── (dashboard)/
-│   │   │   ├── layout.tsx          # Responsive Shell (Sidebar on Laptop, TabBar on iPhone)
-│   │   │   ├── page.tsx            # Unified Today View (Tasks + Daily Budget Snapshot)
-│   │   │   ├── tasks/page.tsx      # Focused Task Tracker View
-│   │   │   ├── expenses/page.tsx   # Expense Tracker & Day/Week/Month Budget View
-│   │   │   └── settings/page.tsx   # Budget Limits & Category Configuration
-│   │   ├── globals.css             # CSS variables, semantic colors, Liquid Glass utility classes
-│   │   ├── layout.tsx              # Root layout, viewport meta, providers
-│   │   └── manifest.ts             # Next.js PWA manifest generator
+│   │   │   ├── layout.tsx          # Shell: LiquidGlassBar + DataSync + <main>
+│   │   │   ├── page.tsx            # Today: StreakLine, filter, tasks | budget
+│   │   │   ├── calendar/page.tsx   # Month calendar + day detail
+│   │   │   ├── expenses/page.tsx   # Meters, log expense, this month's list
+│   │   │   └── settings/page.tsx   # Budget limits, currency, Sign Out
+│   │   ├── globals.css             # Tokens, Liquid Glass chrome, flame/celebration keyframes
+│   │   ├── layout.tsx              # Root layout, viewport + iOS meta, Providers
+│   │   ├── providers.tsx           # QueryClientProvider + Toaster
+│   │   ├── manifest.ts             # PWA manifest
+│   │   ├── icon.tsx / apple-icon.tsx  # Code-generated flat app icons
 │   ├── components/
-│   │   ├── layout/
-│   │   │   ├── LiquidGlassBar.tsx  # Floating bottom tab bar (iPhone) / Sidebar (Laptop)
-│   │   │   └── StreakHeader.tsx    # Top bar displaying Task Streak & Budget Streak
-│   │   ├── shared/
-│   │   │   ├── CategoryBadge.tsx   # Solid color dot + label (Red, Blue, Green, Amber)
-│   │   │   └── CategoryFilter.tsx  # Horizontal pill selector for filtering by color
-│   │   ├── tasks/
-│   │   │   ├── TaskItem.tsx        # Single task row with checkbox, color tag, delete button
-│   │   │   └── AddTaskForm.tsx     # Quick inline task creation bar
-│   │   └── expenses/
-│   │       ├── BudgetMeters.tsx    # Day, Week, Month solid progress bars
-│   │       ├── ExpenseItem.tsx     # Single expense row with color tag, amount, delete button
-│   │       └── AddExpenseForm.tsx  # Quick expense input + color category selector
+│   │   ├── layout/                 # LiquidGlassBar, StreakHeader, StreakLine, DataSync
+│   │   ├── shared/                 # CategoryBadge/Filter/Picker, WeekdayPicker, BlueFlame, Toaster
+│   │   ├── tasks/                  # TodayTasks (view/edit mode), TaskItem, AddTaskForm, AllDoneCelebration
+│   │   ├── calendar/CalendarView.tsx
+│   │   ├── expenses/               # BudgetMeters, AddExpenseForm, ExpenseItem, ExpenseList, TodayBudget, ExpensesView
+│   │   └── settings/               # BudgetSettingsForm, SignOutButton
 │   ├── hooks/
-│   │   ├── useRealtimeSync.ts      # Subscribes to Supabase Postgres changes for live sync
-│   │   ├── useTasks.ts             # CRUD + optimistic mutations for tasks
-│   │   ├── useExpenses.ts          # CRUD + budget calculations for expenses
-│   │   └── useStreaks.ts           # Evaluates & persists Task Streak and Budget Streak
+│   │   ├── useTasks.ts             # Tasks for one day: optimistic add/toggle/delete/repeat
+│   │   ├── useTaskTemplates.ts     # Active repeating tasks; stop repeating
+│   │   ├── useTaskCounts.ts        # Per-day counts for the calendar grid
+│   │   ├── useExpenses.ts          # Week+month expenses, scope-aware totals
+│   │   ├── useBudget.ts            # Budget caps (defaults until saved)
+│   │   ├── useStreaks.ts           # get_streaks RPC, daily_logs range, today's snapshot upsert
+│   │   ├── useRealtimeSync.ts      # postgres_changes → query invalidation
+│   │   └── useCategoryFilter.ts / useToast.ts  # Zustand UI state
 │   ├── lib/
-│   │   ├── supabase/
-│   │   │   ├── client.ts           # Browser Supabase client
-│   │   │   └── server.ts           # Server Supabase client
-│   │   ├── constants/
-│   │   │   └── categories.ts       # Shared Color Definitions (RED, BLUE, GREEN, AMBER)
-│   │   └── utils/
-│   │       └── dates.ts            # Local timezone YYYY-MM-DD boundary helpers
-│   └── types/
-│       └── database.ts             # TypeScript interfaces matching Supabase schema
-├── PRD.md
-├── Architecture.md
-├── Rules.md
-├── memory.md
-├── design.md
-└── tasks.md
+│   │   ├── supabase/               # client.ts, server.ts, middleware.ts, env.ts
+│   │   ├── constants/              # categories.ts, appIcon.tsx
+│   │   └── utils/                  # dates.ts (local dates, weekdays), money.ts, cn.ts
+│   ├── middleware.ts               # Session refresh + sign-in gate
+│   └── types/database.ts           # Supabase-generated types + aliases
+└── PRD.md · Architecture.md · Rules.md · memory.md · design.md · tasks.md
 ```
 
 ---
@@ -130,9 +122,34 @@ CREATE TABLE tasks (
   category category_color NOT NULL,
   is_completed BOOLEAN NOT NULL DEFAULT FALSE,
   task_date DATE NOT NULL DEFAULT CURRENT_DATE,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  note TEXT CHECK (note IS NULL OR char_length(note) <= 200),          -- task "bio", e.g. "1 hr workout"
+  template_id UUID REFERENCES task_templates(id) ON DELETE SET NULL    -- set when created from a repeat
 );
 ```
+
+### 4.3a `task_templates` & `template_materializations` (Repeating Tasks)
+```sql
+CREATE TABLE task_templates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL DEFAULT auth.uid() REFERENCES auth.users(id) ON DELETE CASCADE,
+  title TEXT NOT NULL CHECK (char_length(title) <= 140),
+  note TEXT CHECK (note IS NULL OR char_length(note) <= 200),
+  category category_color NOT NULL,
+  weekdays SMALLINT[] NOT NULL,          -- 0 = Sunday … 6 = Saturday (JS getDay / Postgres DOW)
+  active BOOLEAN NOT NULL DEFAULT TRUE,  -- false = stopped repeating (past copies kept)
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- One row per (template, day) ever created, so a copy the user deleted is not re-created.
+CREATE TABLE template_materializations (
+  template_id UUID NOT NULL REFERENCES task_templates(id) ON DELETE CASCADE,
+  task_date DATE NOT NULL,
+  user_id UUID NOT NULL DEFAULT auth.uid() REFERENCES auth.users(id) ON DELETE CASCADE,
+  PRIMARY KEY (template_id, task_date)
+);
+```
+Unfinished tasks are **not** carried over. Repeating tasks are created per day by `materialize_tasks(p_date)`, which the Today page calls on load. The call is idempotent and safe when two devices make it at once.
 
 ### 4.4 `expenses` Table
 ```sql
@@ -143,9 +160,11 @@ CREATE TABLE expenses (
   amount NUMERIC(10, 2) NOT NULL CHECK (amount > 0),
   category category_color NOT NULL,
   expense_date DATE NOT NULL DEFAULT CURRENT_DATE,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  scope expense_scope NOT NULL DEFAULT 'DAY'   -- 'DAY' | 'WEEK' | 'MONTH'
 );
 ```
+`scope` decides which budgets an expense counts toward: `DAY` → today + week + month, `WEEK` → week + month, `MONTH` → month only. Only `DAY` expenses feed `daily_logs.daily_spent`, and so the Budget Streak.
 
 ### 4.5 `daily_logs` Table (Powers Dual Streaks reliably across devices)
 ```sql
@@ -168,5 +187,14 @@ CREATE TABLE daily_logs (
 ## 5. How Everything Connects (Cross-Device Sync & Streaks)
 
 1. **Authentication & Row-Level Security (RLS):** Both iPhone and Laptop log into the same Supabase account. Every query is scoped automatically via `auth.uid() = user_id`.
-2. **Realtime Channel (`useRealtimeSync.ts`):** On mount, the app subscribes to `postgres_changes` on `tasks`, `expenses`, `budgets`, and `daily_logs`. When a change occurs on the laptop, the iPhone receives the payload and invalidates the corresponding TanStack Query key.
-3. **Streak Calculation:** Streaks are calculated by counting consecutive rows in `daily_logs` backward from `today` (or `yesterday` if today is still in progress) where `task_day_won = true` (Task Streak) and `budget_day_won = true` (Budget Streak).
+2. **Realtime Channel (`useRealtimeSync.ts`):** On mount, the app subscribes to `postgres_changes` on `tasks`, `expenses`, `budgets`, `daily_logs` and `task_templates`. When a change occurs on the laptop, the iPhone receives the payload and invalidates the corresponding TanStack Query key.
+3. **`daily_logs` Maintenance:** Triggers on `tasks` and `expenses` call `private.refresh_daily_log(user, date)`, which recomputes that day's row under a per-(user, day) advisory lock. The client only upserts today's row on app open to set the budget snapshot.
+4. **Streak Calculation:** `get_streaks(p_today)` returns the current, longest and total won days for both streaks. The Task Streak counts consecutive `task_day_won` days ending today, or ending yesterday while today is in progress. The Budget Streak treats days with no row as $0-spend wins and resets on any over-budget day.
+
+### 5.1 RPC Functions (all `SECURITY INVOKER`, so RLS applies)
+| Function | Purpose |
+| --- | --- |
+| `get_streaks(p_today)` | Current / longest / total won days for both streaks |
+| `materialize_tasks(p_date)` | Create that day's copies of active repeating tasks (idempotent) |
+| `create_repeating_task(...)` | New repeating task (client-generated ids for optimistic UI); creates today's copy only if today is one of its days |
+| `make_task_repeating(p_task_id, p_template_id, p_weekdays)` | Turn a task into a repeat, or change an existing repeat's days |
