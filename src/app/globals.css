@@ -6,8 +6,16 @@
   --bg-surface: #ffffff;
   --bg-subtle: #e5e5ea;
   --text-primary: #000000;
-  --text-secondary: #6c6c70;
+  /* #6c6c70 measured 4.16:1 on --bg-subtle; #636366 passes AA on every surface. */
+  --text-secondary: #636366;
   --border-hairline: #c6c6c8;
+
+  /* UI accent + danger, kept separate from category colors ("one color means one
+     thing") and tuned for WCAG AA text contrast. Light values are Apple's
+     increased-contrast system blue / red. */
+  --accent: #0040dd;
+  --accent-fill: #0060df; /* white text 5.6:1 in both modes */
+  --danger: #d70015;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -18,6 +26,9 @@
     --text-primary: #ffffff;
     --text-secondary: #98989d;
     --border-hairline: #38383a;
+
+    --accent: #409cff;
+    --danger: #ff453a;
 
     /* Category solids, dark variants (design.md §3.2) */
     --color-red: #ff453a;
@@ -49,6 +60,9 @@
   --color-primary: var(--text-primary);
   --color-secondary: var(--text-secondary);
   --color-hairline: var(--border-hairline);
+  --color-accent: var(--accent);
+  --color-accent-fill: var(--accent-fill);
+  --color-danger: var(--danger);
 }
 
 body {
@@ -73,6 +87,22 @@ body {
       background-color: rgba(28, 28, 30, 0.72);
       border: 1px solid rgba(255, 255, 255, 0.12);
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+  }
+
+  /* Accessibility states (liquid-glass.md › Review checklist §5):
+     Reduce Transparency gets an opaque fallback, Increase Contrast a stronger border. */
+  @media (prefers-reduced-transparency: reduce) {
+    .liquid-glass-chrome {
+      background-color: var(--bg-surface);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+  }
+
+  @media (prefers-contrast: more) {
+    .liquid-glass-chrome {
+      border-color: var(--border-hairline);
     }
   }
 }

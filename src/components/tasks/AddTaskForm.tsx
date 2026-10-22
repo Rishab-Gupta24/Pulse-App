@@ -40,7 +40,7 @@ export default function AddTaskForm({
         <button
           type="submit"
           disabled={!title.trim()}
-          className="h-11 shrink-0 rounded-xl bg-blue px-4 text-[15px] font-semibold text-white disabled:opacity-50"
+          className="h-11 shrink-0 rounded-xl bg-accent-fill px-4 text-[15px] font-semibold text-white disabled:opacity-50"
         >
           Add Task
         </button>

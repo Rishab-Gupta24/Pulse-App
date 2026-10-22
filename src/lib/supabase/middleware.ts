@@ -3,7 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/types/database";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "./env";
 
-const PUBLIC_PATHS = ["/login", "/auth"];
+// PWA manifest and icons must load before sign-in (iOS fetches them on "Add to Home Screen").
+const PUBLIC_PATHS = ["/login", "/auth", "/manifest.webmanifest", "/icon", "/apple-icon"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });

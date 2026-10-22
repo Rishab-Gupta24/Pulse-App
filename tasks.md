@@ -70,8 +70,8 @@
 ---
 
 ## Phase 7: iPhone PWA Polish & Final HIG Audit
-- [ ] **7.1** Configure `src/app/manifest.ts` and iOS meta tags (`apple-mobile-web-app-capable="yes"`, `apple-mobile-web-app-status-bar-style="default"`, `viewport-fit=cover`) so installing the app via Safari **"Add to Home Screen"** on iPhone launches it fullscreen without browser toolbars.
-- [ ] **7.2** Run a design audit against `.design-rules/SKILL.md` (`dickwu/apple-design-skill`):
+- [x] **7.1** Configure `src/app/manifest.ts` and iOS meta tags (`apple-mobile-web-app-capable="yes"`, `apple-mobile-web-app-status-bar-style="default"`, `viewport-fit=cover`) so installing the app via Safari **"Add to Home Screen"** on iPhone launches it fullscreen without browser toolbars.
+- [x] **7.2** Run a design audit against `.design-rules/SKILL.md` (`dickwu/apple-design-skill`):
   - Verify zero gradients exist anywhere in the codebase.
   - Verify Liquid Glass is applied only to the floating navigation bar/modals and never on content rows.
   - Verify all touch targets on iPhone are `>= 44x44px` and text contrast passes WCAG AA (`4.5:1`).

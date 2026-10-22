@@ -47,7 +47,7 @@ export default function LiquidGlassBar() {
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-full py-1 text-xs font-medium",
-                    active ? "text-blue" : "text-secondary",
+                    active ? "text-accent" : "text-secondary",
                   )}
                 >
                   <Icon size={22} strokeWidth={1.75} aria-hidden />
@@ -81,7 +81,7 @@ export default function LiquidGlassBar() {
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       "flex min-h-11 items-center gap-3 rounded-xl px-3 text-[15px] font-medium",
-                      active ? "bg-surface text-blue" : "text-primary",
+                      active ? "bg-surface text-accent" : "text-primary",
                     )}
                   >
                     <Icon size={20} strokeWidth={1.75} aria-hidden />

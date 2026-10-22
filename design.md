@@ -61,8 +61,13 @@ Following Apple's Liquid Glass rules from `dickwu/apple-design-skill`:
 | `--bg-surface` | `#FFFFFF` | `#1C1C1E` | Solid opaque task rows, expense rows, budget cards |
 | `--bg-subtle` | `#E5E5EA` | `#2C2C2E` | Unfilled progress bar tracks, secondary pills |
 | `--text-primary` | `#000000` | `#FFFFFF` | Task titles, expense amounts, headings |
-| `--text-secondary` | `#6C6C70` | `#98989D` | Timestamps, budget subtitles, empty states |
+| `--text-secondary` | `#636366` | `#98989D` | Timestamps, budget subtitles, empty states (light value darkened from `#6C6C70` for AA on `--bg-subtle`) |
 | `--border-hairline` | `#C6C6C8` | `#38383A` | `1px` solid dividers between list items |
+| `--accent` | `#0040DD` | `#409CFF` | UI accent text: active tab/sidebar item, Undo, focus ring (Apple increased-contrast blue) |
+| `--accent-fill` | `#0060DF` | `#0060DF` | Primary button fill with white text (5.6:1) |
+| `--danger` | `#D70015` | `#FF453A` | Error and over-budget text, Sign Out |
+
+*Category colors (§3.2) are reserved for categories and budget-meter fills; UI accents and errors use the three tokens above so "one color means one thing" and all text passes WCAG AA (4.5:1).*
 
 ### 3.2 Shared Category Color Tokens (Tasks & Expenses)
 

@@ -109,7 +109,7 @@ export default function LoginPage() {
   }
 
   const inputClass =
-    "h-11 w-full rounded-xl border border-hairline bg-surface px-4 text-[17px] text-primary outline-none focus:border-blue md:text-[15px]";
+    "h-11 w-full rounded-xl border border-hairline bg-surface px-4 text-[17px] text-primary outline-none focus:border-accent md:text-[15px]";
   const secondaryButtonClass =
     "h-11 w-full rounded-xl bg-subtle text-[15px] font-semibold text-primary disabled:opacity-50";
 
@@ -153,7 +153,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={busy}
-          className="mt-2 h-11 w-full rounded-xl bg-blue text-[15px] font-semibold text-white disabled:opacity-50"
+          className="mt-2 h-11 w-full rounded-xl bg-accent-fill text-[15px] font-semibold text-white disabled:opacity-50"
         >
           Sign In
         </button>
@@ -178,7 +178,7 @@ export default function LoginPage() {
       <p
         role={status.kind === "error" ? "alert" : "status"}
         aria-live="polite"
-        className={`mt-4 min-h-5 text-[15px] ${status.kind === "error" ? "text-red" : "text-secondary"}`}
+        className={`mt-4 min-h-5 text-[15px] ${status.kind === "error" ? "text-danger" : "text-secondary"}`}
       >
         {status.message}
       </p>

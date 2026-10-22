@@ -29,7 +29,7 @@ export default function SignOutButton() {
       type="button"
       disabled={busy}
       onClick={handleSignOut}
-      className="h-11 w-full rounded-xl bg-surface text-[15px] font-semibold text-red disabled:opacity-50"
+      className="h-11 w-full rounded-xl bg-surface text-[15px] font-semibold text-danger disabled:opacity-50"
     >
       Sign Out
     </button>

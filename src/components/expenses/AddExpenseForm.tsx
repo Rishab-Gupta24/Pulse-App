@@ -76,12 +76,12 @@ export default function AddExpenseForm({
       <CategoryPicker value={category} onChange={setCategory} />
       <button
         type="submit"
-        className="h-11 rounded-xl bg-blue text-[15px] font-semibold text-white"
+        className="h-11 rounded-xl bg-accent-fill text-[15px] font-semibold text-white"
       >
         Log Expense
       </button>
       {error && (
-        <p role="alert" className="text-[13px] text-red">
+        <p role="alert" className="text-[13px] text-danger">
           {error}
         </p>
       )}

@@ -25,7 +25,7 @@ export default function Toaster() {
                 toast.action?.onClick();
                 dismiss(toast.id);
               }}
-              className="min-h-11 rounded-xl px-3 font-semibold text-blue"
+              className="min-h-11 rounded-xl px-3 font-semibold text-accent"
             >
               {toast.action.label}
             </button>

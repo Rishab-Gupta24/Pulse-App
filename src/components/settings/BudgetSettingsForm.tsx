@@ -109,12 +109,12 @@ function Form({
       <button
         type="submit"
         disabled={isSaving}
-        className="h-11 rounded-xl bg-blue text-[15px] font-semibold text-white disabled:opacity-50"
+        className="h-11 rounded-xl bg-accent-fill text-[15px] font-semibold text-white disabled:opacity-50"
       >
         Save Budgets
       </button>
       {error && (
-        <p role="alert" className="text-[13px] text-red">
+        <p role="alert" className="text-[13px] text-danger">
           {error}
         </p>
       )}

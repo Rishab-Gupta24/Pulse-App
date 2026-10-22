@@ -30,7 +30,7 @@ export default function ExpenseItem({
         type="button"
         aria-label={`Delete "${expense.title}"`}
         onClick={() => onDelete(expense)}
-        className="flex size-11 shrink-0 items-center justify-center rounded-xl text-secondary hover:text-red"
+        className="flex size-11 shrink-0 items-center justify-center rounded-xl text-secondary hover:text-danger"
       >
         <Trash2 size={18} strokeWidth={1.75} aria-hidden />
       </button>

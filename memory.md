@@ -7,7 +7,7 @@
 ## 1. Current Project Context
 - **App Name:** Pulse (Daily Task & Expense Tracker)
 - **Target Devices:** User's iPhone (via iOS Home Screen PWA) & Laptop (Desktop Browser)
-- **Current Phase:** Phase 6 — Dual Streak Engine & Realtime Sync Complete (next: Phase 7, PWA Polish & Audit)
+- **Current Phase:** Phase 7 — PWA polish (7.1) and HIG audit (7.2) complete; 7.3 (Vercel deploy + iPhone test) pending user go-ahead
 - **Supabase Project:** `Pulse` (ref `jlcyiuxiijticddsraje`, region `ap-south-1`, free tier). The older `Leveling` project is unrelated.
 - **Design System Reference:** `https://github.com/dickwu/apple-design-skill.git` (Apple HIG + Liquid Glass specification)
 
@@ -65,6 +65,11 @@
 - **Context:** `tasks.md` 6.1 asked the client to upsert today's `daily_logs` row on every change. That misses edits from other devices, edits to past days (the Expenses list allows deleting earlier expenses), and writes made while another tab is closed.
 - **Decision:** `AFTER INSERT/UPDATE/DELETE` triggers on `tasks` and `expenses` call `private.refresh_daily_log(user, date)`, which recomputes `tasks_total`, `tasks_completed` and `daily_spent` for the row's own local date (never `NOW()`). It takes a `pg_advisory_xact_lock` per (user, day) first, so concurrent writes can't leave stale counts. Everything runs as `SECURITY INVOKER`, so RLS still applies; the `private` schema keeps the helper off the Data API. The budget snapshot is set when a row is first created; `useTodayLogSnapshot` (mounted once via `DataSync`) upserts today's row on app open and whenever the Daily Budget changes, so past days keep their snapshot. Streaks come from `get_streaks(p_today)`. **Task streak** counts consecutive won days ending today, or ending yesterday while today is still in progress. **Budget streak** is 0 if today is over budget; otherwise it is `p_today − max(last over-budget day, first logged day − 1)`, so days with no row count as $0-spend days. `useRealtimeSync` subscribes to `postgres_changes` on all 4 tables, invalidates the matching query keys, and refetches everything after a reconnect.
 
+### ADR-010: PWA Install Setup & Accessible UI Color Tokens
+- **Date:** 2026-10-22
+- **Context:** Phase 7 install polish and the `.design-rules` audit (`accessibility.md` contrast table, `liquid-glass.md` › Review checklist).
+- **Decision:** `app/manifest.ts` (standalone, `start_url` `/`), code-generated flat icons (`app/icon.tsx` → `/icon/32|192|512`, `app/apple-icon.tsx` 180px, shared `AppIconMark`), and the default Next favicon removed. The root layout exports `viewport` (`viewport-fit=cover`, light/dark `theme-color`) and `appleWebApp` metadata, plus an explicit `apple-mobile-web-app-capable` tag because Next 15 only emits `mobile-web-app-capable`. The dashboard `<main>` pads by `env(safe-area-inset-top)`. The middleware allows the manifest and icon routes without a session. The audit computed WCAG ratios from hex values and found six failing pairs, all system blue/red used as text or as a white-text button fill, plus secondary text on `--bg-subtle`. Fix: new `--accent` (`#0040DD` / `#409CFF`), `--accent-fill` (`#0060DF`) and `--danger` (`#D70015` / `#FF453A`) tokens for UI; category colors remain only on categories and meter fills; light `--text-secondary` darkened to `#636366`. The glass chrome gains Reduce Transparency (opaque) and Increase Contrast (hairline border) fallbacks. Not done: scroll-edge fade under the tab bar (`liquid-glass.md` checklist §6).
+
 ---
 
 ## 3. Known Edge Cases & Rules
@@ -91,3 +96,5 @@
 - **2026-10-22:** Phase 4 complete — `useTasks`, `AddTaskForm`, `TaskItem`, `TodayTasks`, `CategoryPicker`, toast system, Query provider. Verified add / toggle (persists across reload) / delete / undo / category filter against Supabase; failure rollback path not exercised.
 - **2026-10-22:** Phase 5 complete — `useBudget`, `useExpenses`, `BudgetMeters`, `AddExpenseForm`, `ExpenseItem`, `ExpenseList`, `TodayBudget`, `ExpensesView`, Settings budget form + Sign Out. Verified logging, amount validation, green→amber→red meters, delete/undo recalculation, budget save + hierarchy warning, two-column laptop layout; test rows removed.
 - **2026-10-22:** Phase 6 complete — migrations `daily_logs_sync_and_streaks`, `move_refresh_daily_log_to_private`, `serialize_daily_log_refresh`; `useStreaks`, `useTodayLogSnapshot`, `useRealtimeSync`, `DataSync`. Verified streak logic in a rolled-back SQL run (task 2→3 when today completes; budget 3 after an over-budget day), and in two browser tabs that add/complete/delete and over-budget changes appear in the other tab and update both streaks.
+- **2026-10-22:** Exported the 5 applied migrations to `supabase/migrations/` (MD5-verified against `supabase_migrations.schema_migrations`).
+- **2026-10-22:** Phase 7.1–7.2 complete — manifest, icons, iOS meta tags, safe-area padding; HIG audit: no gradients, glass only on the 2 nav surfaces (never stacked), all 45 visible controls ≥ 44×44 px at 375 px, all text pairs ≥ 4.5:1 after the token fix. Production build verified; manifest + icons return 200 without a session.

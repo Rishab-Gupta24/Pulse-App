@@ -51,7 +51,7 @@ function Meter({
       <span
         className={cn(
           "text-[13px] tabular-nums",
-          over ? "font-semibold text-red" : "text-secondary",
+          over ? "font-semibold text-danger" : "text-secondary",
         )}
       >
         {summary}
