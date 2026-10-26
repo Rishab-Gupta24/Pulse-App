@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import Providers from "./providers";
 
@@ -35,6 +36,8 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased">
         <Providers>{children}</Providers>
+        {/* Vercel Web Analytics: cookieless page views; only active on Vercel deploys. */}
+        <Analytics />
       </body>
     </html>
   );

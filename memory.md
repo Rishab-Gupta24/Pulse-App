@@ -102,6 +102,11 @@
   - **All days:** `update_repeating_task(p_today)` updates the template and every copy from today on, including copies customized for one day. `delete_repeating_task(p_today)` sets `active = false` and deletes copies after today, plus today's copy only if it isn't done, so finished days keep their history.
   - **Calendar projection** now excludes days claimed in `template_materializations` (`useTaskCounts().claimed`), not just days that have a stored copy.
 
+### ADR-015: Vercel Web Analytics
+- **Date:** 2026-10-26
+- **Context:** The user wanted visit counts. Until now only Supabase account and usage counts existed, and no visits were tracked.
+- **Decision:** Added the `@vercel/analytics` dependency (official, cookieless, included in the Hobby plan) and `<Analytics />` in the root layout. The middleware matcher now skips `/_vercel` so the analytics script and its page-view calls work while signed out (e.g. on `/login`). Data only appears once Web Analytics is enabled in the Vercel project's Analytics tab, and visits from before that can't be recovered.
+
 ---
 
 ## 3. Known Edge Cases & Rules
@@ -138,6 +143,8 @@
 - **2026-10-22:** Phase 5 complete — `useBudget`, `useExpenses`, `BudgetMeters`, `AddExpenseForm`, `ExpenseItem`, `ExpenseList`, `TodayBudget`, `ExpensesView`, Settings budget form + Sign Out. Verified logging, amount validation, green→amber→red meters, delete/undo recalculation, budget save + hierarchy warning, two-column laptop layout; test rows removed.
 - **2026-10-22:** Phase 6 complete — migrations `daily_logs_sync_and_streaks`, `move_refresh_daily_log_to_private`, `serialize_daily_log_refresh`; `useStreaks`, `useTodayLogSnapshot`, `useRealtimeSync`, `DataSync`. Verified streak logic in a rolled-back SQL run (task 2→3 when today completes; budget 3 after an over-budget day), and in two browser tabs that add/complete/delete and over-budget changes appear in the other tab and update both streaks.
 - **2026-10-22:** Exported the 5 applied migrations to `supabase/migrations/` (MD5-verified against `supabase_migrations.schema_migrations`).
+- **2026-10-26:** Added Vercel Web Analytics (ADR-015). User count at that point: 4 accounts (3 confirmed), 3 active in the last 7 days.
+- **2026-10-22:** Phase 9 committed (`6b0c6e5`) and deployed to production.
 - **2026-10-22:** Phase 8 committed (`03219c5`) and deployed to production.
 - **2026-10-22:** Phase 9 — calendar task actions (long-press on iPhone, right-click, Edit Tasks pencil on laptop) with edit / delete for this day or all repeating days; migration `20261022192913_repeat_day_edits` (3 RPCs + materialization policy fix). Verified at 375px and 1366px; test data removed; the user's 2 repeats and "GYM" task untouched.
 - **2026-10-22:** Deployed to Vercel with the CLI (https://pulse-pi-teal.vercel.app); added `.vercelignore`, secret guard (ADR-011).
